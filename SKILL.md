@@ -1,6 +1,6 @@
 ---
 name: prd-to-kanban
-description: Convert a PRD into a living Kanban board (markdown). PRD → kanban.md → subagent-driven-development execution. Sub-commands: install (auto-configure trigger rules in CLAUDE.md).
+description: "Convert a PRD into a living Kanban board (markdown). PRD to kanban.md via subagent-driven-development execution. Sub-commands: install (auto-configure trigger rules in CLAUDE.md)."
 ---
 
 # PRD to Kanban Skill
