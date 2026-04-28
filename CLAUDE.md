@@ -4,37 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-A cross-compatible Claude Code and Codex skill/plugin that converts PRDs/requirements into `work/kanban.md` and `work/SUBAGENT.md`. This is a planning-only skill — it decomposes work but does not execute it. Execution is handed off to `subagent-driven-development`.
+This repo packages two Claude Code / Codex plugins for the marketplace:
 
-Workflow chain: PRD → **prd-to-kanban** → `kanban.md` → subagent-driven-development → implemented code.
+1. **prd-to-kanban** (standalone) — converts PRDs/requirements into `work/kanban.md` and `work/SUBAGENT.md`. Planning-only; does not execute tasks.
+2. **praxiskit** (full pipeline) — intent-to-acceptance chain: `seed-to-idea → idea-to-prd → prd-to-kanban → kanban-to-agents → build-to-review`.
 
-Sub-commands:
-- `install [--project]` — writes auto-trigger rules to CLAUDE.md so the skill fires automatically on PRD/requirements detection
+Install one or the other, not both (PraxisKit bundles prd-to-kanban).
 
 ## File Structure
 
 ```
-SKILL.md                                      # Standalone skill entry
-plugins/prd-to-kanban/SKILL.md               # Shared skill source of truth
-plugins/prd-to-kanban/skills/prd-to-kanban/  # Plugin-packaged skill entry
-plugins/prd-to-kanban/.claude-plugin/        # Claude Code plugin manifest
-plugins/prd-to-kanban/.codex-plugin/         # Codex plugin manifest
-.claude-plugin/marketplace.json              # Claude Code marketplace catalog
-.agents/plugins/marketplace.json             # Codex marketplace catalog
-CLAUDE.md                                     # This file - repo context for Claude Code
-AGENTS.md                                     # Repo context for Codex
-README.md                                     # User-facing install/usage docs
+SKILL.md                                           # Standalone prd-to-kanban skill entry (thin wrapper)
+plugins/prd-to-kanban/SKILL.md                    # prd-to-kanban source of truth
+plugins/prd-to-kanban/skills/prd-to-kanban/       # Plugin-packaged entry (thin wrapper)
+plugins/prd-to-kanban/.claude-plugin/             # Claude Code plugin manifest
+plugins/prd-to-kanban/.codex-plugin/              # Codex plugin manifest
+plugins/praxiskit/skills/seed-to-idea/            # PraxisKit step 1
+plugins/praxiskit/skills/idea-to-prd/             # PraxisKit step 2
+plugins/praxiskit/skills/prd-to-kanban/           # PraxisKit step 3 (thin wrapper)
+plugins/praxiskit/skills/kanban-to-agents/        # PraxisKit step 4
+plugins/praxiskit/skills/build-to-review/         # PraxisKit step 5
+plugins/praxiskit/.claude-plugin/                 # PraxisKit Claude Code plugin manifest
+plugins/praxiskit/.codex-plugin/                  # PraxisKit Codex plugin manifest
+.claude-plugin/marketplace.json                   # Claude Code marketplace catalog
+.agents/plugins/marketplace.json                  # Codex marketplace catalog
+examples/                                         # Sample PRD input and kanban output
+CLAUDE.md                                          # This file
+AGENTS.md                                          # Repo context for Codex
+README.md                                          # User-facing install/usage docs
+CHANGELOG.md                                       # Version history
 ```
 
-`plugins/prd-to-kanban/SKILL.md` is the single source of truth for the skill's behavior. Root `SKILL.md` and the plugin-packaged skill entry delegate to it.
+## Modifying Skills
 
-## Modifying This Skill
-
-- All skill logic is in `plugins/prd-to-kanban/SKILL.md` - edit that file directly
-- Keep root `SKILL.md` and `plugins/prd-to-kanban/skills/prd-to-kanban/SKILL.md` as thin entries that point to the shared source
-- The skill defines its own trigger conditions (when Claude should invoke it automatically)
-- Settings in `.claude/settings.local.json` are local-only and gitignored. Keep them machine-specific.
-- Test changes by running the skill against a sample PRD and inspecting the generated `kanban.md` and `SUBAGENT.md`
+- **prd-to-kanban behavior:** edit `plugins/prd-to-kanban/SKILL.md` — the single source of truth. Keep root `SKILL.md` and `plugins/prd-to-kanban/skills/prd-to-kanban/SKILL.md` as thin wrappers.
+- **PraxisKit steps:** edit the respective `plugins/praxiskit/skills/<step>/SKILL.md` directly. Each step is self-contained.
+- **Plugin manifests:** `interface` block in `.claude-plugin/plugin.json` controls marketplace presentation.
+- Test by running the skill against `examples/sample-prd.md` and inspecting generated `work/kanban.md` and `work/SUBAGENT.md`.
 
 ## Key Design Constraints
 

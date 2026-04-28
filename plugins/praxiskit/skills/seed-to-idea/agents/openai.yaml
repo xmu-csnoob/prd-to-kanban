@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seed to Idea"
+  short_description: "Capture vague ideas into a useful brief"
+  default_prompt: "Use $seed-to-idea to turn this rough seed into a clear idea brief."

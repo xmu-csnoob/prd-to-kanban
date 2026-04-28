@@ -5,6 +5,18 @@
   },
   "plugins": [
     {
+      "name": "praxiskit",
+      "source": {
+        "source": "local",
+        "path": "./plugins/praxiskit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
       "name": "prd-to-kanban",
       "source": {
         "source": "local",

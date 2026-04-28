@@ -9,6 +9,35 @@
   },
   "plugins": [
     {
+      "name": "praxiskit",
+      "source": "./plugins/praxiskit",
+      "description": "Turn product intent into governed agent execution and final acceptance review through composable skills (seed-to-idea → idea-to-prd → prd-to-kanban → kanban-to-agents → build-to-review).",
+      "version": "0.1.0",
+      "author": {
+        "name": "xmu-csnoob"
+      },
+      "repository": "https://github.com/xmu-csnoob/prd-to-kanban",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "codex",
+        "skill",
+        "agents",
+        "prd",
+        "kanban",
+        "orchestration",
+        "praxiskit"
+      ],
+      "category": "Productivity",
+      "tags": [
+        "planning",
+        "prd",
+        "kanban",
+        "multi-agent",
+        "orchestration"
+      ]
+    },
+    {
       "name": "prd-to-kanban",
       "source": "./plugins/prd-to-kanban",
       "description": "Convert a PRD into a living Kanban board and shared subagent context.",

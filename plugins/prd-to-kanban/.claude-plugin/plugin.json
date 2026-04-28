@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "Convert a PRD into a living Kanban board and shared subagent context.",
   "author": {
-    "name": "xmu-csnoob"
+    "name": "xmu-csnoob",
+    "url": "https://github.com/xmu-csnoob"
   },
+  "homepage": "https://github.com/xmu-csnoob/prd-to-kanban",
   "repository": "https://github.com/xmu-csnoob/prd-to-kanban",
   "license": "MIT",
   "skills": "./skills/",
@@ -16,5 +18,23 @@
     "kanban",
     "project-management",
     "task-decomposition"
-  ]
+  ],
+  "interface": {
+    "displayName": "PRD to Kanban",
+    "shortDescription": "Turn PRDs into agent-ready Kanban boards",
+    "longDescription": "Convert product requirements, design docs, or feature specs into work/kanban.md and work/SUBAGENT.md for multi-agent implementation planning.",
+    "developerName": "xmu-csnoob",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/xmu-csnoob/prd-to-kanban",
+    "defaultPrompt": [
+      "Use PRD to Kanban to turn this PRD into work/kanban.md.",
+      "Break this feature spec into an agent-ready Kanban board.",
+      "Create work/kanban.md and work/SUBAGENT.md from these requirements."
+    ],
+    "brandColor": "#10A37F"
+  }
 }

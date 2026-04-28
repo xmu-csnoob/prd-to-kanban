@@ -1,0 +1,4 @@
+interface:
+  display_name: "Idea to PRD"
+  short_description: "Turn product ideas into implementation PRDs"
+  default_prompt: "Use $idea-to-prd to turn this idea brief into a concise PRD."

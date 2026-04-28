@@ -100,6 +100,7 @@ A single markdown file using native markdown syntax. No custom pipe-delimited fo
 | Done  | {n}  |
 | Progress | {n}% |
 | Agents | {n}  |
+| Scale | S / M / L |
 | Milestone | {id} — {title} |
 
 ## Milestones
@@ -130,11 +131,13 @@ A single markdown file using native markdown syntax. No custom pipe-delimited fo
 **Wave** = scheduling phase (time-based). **Layer** = topological position (structure-based).
 Same layer + different owners + disjoint write scopes → safe to parallelize.
 
-### Parallelism Windows (waves)
-| Window | Wave | Tasks | Agents | Strategy |
-|--------|------|-------|--------|----------|
+### Executable Batches
+| Batch | Tasks | Can Run In Parallel | Why |
+|-------|-------|---------------------|-----|
+| W0a | T0.1 | No | Root contract dependency |
+| W0b | T0.2, T0.3 | Yes | Same dependency layer and disjoint write scopes |
 
-(Group tasks by wave; one row per window.)
+Batch = executable scheduling unit. Wave = milestone/time phase. Do not group a whole wave into one batch when tasks inside it have serial dependencies.
 
 ### Critical Path
 `T0.2 → T3.1 → T3.2 → T3.4 → T5.1 → T5.5 → T5.6`
@@ -145,6 +148,13 @@ Longest dependency chain (computed). Tasks on this chain are marked with ⚠ in 
 | Risk | Mitigation | Gate | Status |
 |------|------------|------|--------|
 | ...  | ...        | M0   | [ ]    |
+
+## Preflight
+| Check | Command / Evidence | Baseline Status | Action |
+|-------|--------------------|-----------------|--------|
+| Tests | `{command}` | pass / fail / unknown | |
+| Build | `{command}` | pass / fail / unknown | |
+| Existing blocker | `{path or issue}` | fail | `T0.0` / blocked gate |
 
 ## Agent Roles
 | Role | Model | Strength | Best For |
@@ -203,7 +213,7 @@ Orchestrator passes `SUBAGENT.md` path + task description + dep outputs (dynamic
 A task should be:
 - **Completable in one agent session** (1-3 hours of work max)
 - **Self-contained** with a clear output (file created, function implemented, test added)
-- **Max ~50 lines of code change** across files it touches
+- **Small enough to review**. ~50 changed lines is a heuristic, not a hard limit; UI tasks may need JSX + styling + tests without being split artificially.
 
 If a task would span multiple days or touch 5+ files, **break it down**. If it's a single checkbox (e.g., "fix bug X in Y"), it's too small — handle inline.
 
@@ -231,10 +241,13 @@ If AC cannot be made concrete, mark task `Needs Human Approval` with `~` as AC p
 4. **Compute topological layers** from dependency graph — same layer = no transitive deps
 5. **Identify the critical path** — longest chain through dependency graph
 6. **Assign owners** — epic header owner is a default; individual tasks inherit unless overridden. Integration/wiring tasks always have a single explicit owner
-7. **Determine parallelism opportunities** — same layer + different owners + disjoint write scopes = parallel. Build dependency layers table and parallelism windows table
-8. **Generate `kanban.md`** and report the file path. Reflect actual in-progress state — do not reset existing `[x]`/`[/]` to pending
-9. **Generate `SUBAGENT.md`**: project summary, stack, frozen contracts (paths + what they define), write scope table per epic, conventions. Keep it under 80 lines.
-10. **Handoff.** Both files are ready for `subagent-driven-development`. Invoke it if the user wants immediate execution; otherwise, present the board and wait.
+7. **Determine executable batches** — same layer + different owners + disjoint write scopes = parallel. Build both dependency layers and executable batch tables.
+8. **Add preflight blockers** — if repo inspection or PRD baseline shows tests/build already failing, create an early `T0.0` preflight task or mark the relevant release gate blocked.
+9. **Add contract invariants** — W0 contract tasks must state validation boundary, duplicate-state policy, length-limit policy, and whether invalid states are impossible by type.
+10. **Generate `kanban.md`** and report the file path. Reflect actual in-progress state — do not reset existing `[x]`/`[/]` to pending
+11. **Generate `SUBAGENT.md`**: project summary, stack, frozen contracts (paths + what they define), write scope table per epic, conventions. Keep it under 80 lines.
+12. **Update `work/praxiskit-context.md`** (only if running inside a PraxisKit pipeline — skip if this file does not exist and PraxisKit is not in use) with current milestone, canonical constraints, open blockers, latest validation, and source files.
+13. **Handoff.** Both files are ready for `kanban-to-agents`. Invoke it if the user wants immediate execution; otherwise, present the board and wait.
 
 ---
 
@@ -243,5 +256,6 @@ If AC cannot be made concrete, mark task `Needs Human Approval` with `~` as AC p
 - If PRD has **pre-existing dependency info**, preserve it in task-level `[deps]`
 - Always suggest **worktree or branch isolation** when parallel agents are involved
 - **Orchestrator owns kanban updates** — subagents implement and report back; only the orchestrator edits task statuses to avoid concurrent write conflicts
+- For S-scale plans (1-6 tasks), use compact Kanban: dependencies, AC, preflight, and batches only. For M/L plans, include full roles, risks, and gates.
 
 If unresolved questions exist during generation, add an `## Open Questions` table (`Task | Blocked By | Question`). When answered, move to `## Resolved Questions` with answer inline.

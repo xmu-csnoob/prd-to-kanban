@@ -1,0 +1,4 @@
+interface:
+  display_name: "PRD to Kanban"
+  short_description: "Break PRDs into agent-ready Kanban plans"
+  default_prompt: "Use $prd-to-kanban to convert this PRD into work/kanban.md and work/SUBAGENT.md."
