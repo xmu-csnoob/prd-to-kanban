@@ -16,7 +16,7 @@ The value MUST come from the user -- either from the seed/input text directly, o
 
 **When violated:** Agent writes a value without user input -> this is a schema violation. The value must be removed and the field sent to the clarification gate.
 
-**In output documents:** Annotate with `[user]` or `[user via clarify-{stage}]`.
+**In output documents:** Annotate with `[user]` (direct from seed/input), `[user via gate]` (from AskUserQuestion), or `[user via clarify-{stage}]` (from clarify table).
 
 **Typical fields:** target_user, problem statement, success criteria, any named list of domain-specific items (e.g., metadata field names, API endpoints, acceptance thresholds).
 

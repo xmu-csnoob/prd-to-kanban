@@ -15,7 +15,7 @@ Call this gate after loading the stage schema and mapping available input to fie
 1. **stage**: `seed` | `idea` | `prd`
 2. **gaps**: list of fields that are `filled-by-user` with no user source, or `forbidden-to-infer` with no user input. Each gap has:
    - `field`: field name
-   - `kind`: `choice` (2-4 options, user picks one) | `short_text` (1-2 sentences) | `list` (user enumerates items) | `free_text` (multi-line or multi-field answer)
+   - `kind`: `choice` (2-4 options, user picks one) | `short_text` (1-2 sentences) | `list` (user enumerates items) | `free_text` (multi-line answer) | `multi_field` (user must provide several named sub-fields, e.g., a struct definition or a set of config keys with values)
    - `question`: the question to ask the user
    - `options`: (only for `choice` kind) array of 2-4 options
 

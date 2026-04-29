@@ -33,8 +33,8 @@ These fields MUST NOT be written unless the user provides them. If present in se
 
 ## Cross-Field Rules
 
-- If `problem` mentions "distributed" or "cluster" or "replication": add `consistency_model` to forbidden-to-infer list with question "What consistency model do you need? (e.g., eventual, strong, leader-based)"
-- If `problem` mentions "LLM" or "cache" or "inference": add `cache_metadata_fields` to forbidden-to-infer list with question "What metadata fields does a cache entry need? List them (e.g., layer, token_range, dtype)"
+- If `problem` describes a distributed system, multi-node coordination, data replication, or fault tolerance (e.g., "distributed", "cluster", "replication", "consensus", "multi-region", "failover"): add `consistency_model` to forbidden-to-infer list with question "What consistency model do you need? (e.g., eventual consistency, strong consistency, leader-based — or 'not decided yet')"
+- If `problem` describes a caching system where entries have structured metadata — including ML inference caches, attention/KV caches, HTTP caches with headers, session caches, or any cache where entries carry typed fields beyond a simple key-value pair (e.g., "KV-cache", "LLM cache", "inference cache", "attention cache", "transformer serving", "cache with metadata"): add `cache_metadata_fields` to forbidden-to-infer list with question "What metadata fields does a cache entry need? List them (e.g., layer, token_range, dtype — or describe the structure)"
 - If `constraints` is empty after gate: mark as `[user confirmed: none]`
 
 ## Output Annotation Rules

@@ -20,9 +20,9 @@ work/idea.md -> idea-to-prd -> work/PRD.md -> prd-to-kanban
    - If a PRD field has no `[user]` source in idea.md -> add to `gaps`.
    - `inferable` PRD fields may be derived from `[user]` idea.md fields -- mark `[inferred from {field}]`.
 4. **Process idea.md Open Questions.** For each Open Question in idea.md:
-   - If answered by a `[user]` field -> promote to confirmed PRD field
-   - If still open -> carry to PRD `## Open Questions` with same `blocking`/`non-blocking` type
-5. **Apply No-New-Fields Rule.** Any field that would appear in the PRD but has no `[user]` source in idea.md and is not `inferable` -> add to `gaps`.
+   - Check if the question's subject appears as a `[user]` or `[user via *]` annotated field elsewhere in idea.md. If yes → the question is answered; promote that field to a confirmed PRD field.
+   - If no matching `[user]` field exists → the question is still open; carry it to PRD `## Open Questions` with the same `blocking`/`non-blocking` type.
+5. **Apply No-New-Fields Rule.** Any field that would appear in the PRD but has no `[user]` or `[user via *]` source in idea.md and is not `inferable` -> add to `gaps`.
 6. **Call clarification-gate** (see `references/clarification-gate.md`) for all gaps.
 7. **Write `work/PRD.md`** only after all gaps are resolved. Annotate every field with its source.
 8. **Update `work/praxiskit-context.md`**.

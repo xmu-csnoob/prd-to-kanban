@@ -47,7 +47,10 @@ If any exist, output:
 Cannot generate kanban: these FRs have missing acceptance criteria:
 - {FR_ID}: {Requirement}
 ...
-Add Given/When/Then criteria to these rows in work/PRD.md, then retry.
+
+Resolution options:
+- Re-run `idea-to-prd` — it will gate on missing acceptance criteria and collect them from you
+- Or add Given/When/Then criteria directly to these rows in work/PRD.md, then retry
 ```
 
 ### Check 3: At Least 1 Milestone
@@ -61,14 +64,17 @@ Add at least one milestone to ## Milestones, then retry.
 
 ## Main Workflow
 
-After all pre-flight checks pass, invoke the shared `prd-to-kanban` skill and follow its instructions exactly. That skill is the source of truth for output format, task granularity, acceptance criteria, dependency layering, critical path, and subagent handoff rules.
+After all pre-flight checks pass, decompose the PRD into a dependency-aware task board:
 
-If the shared source is unavailable, use this fallback:
-
-- Convert the PRD into `work/kanban.md` and `work/SUBAGENT.md`
-- Plan only. Do not implement tasks.
-- Use verifiable acceptance criteria for every task (copy from PRD FRs)
-- Put frozen contract/schema work in Wave 0
-- Compute dependency layers, parallelism windows, and the critical path
-- Keep `SUBAGENT.md` under 80 lines
-- Report the generated paths and wait unless the user asks for execution
+1. **Load `schemas/kanban.schema.md`** for task field rules.
+2. **Map FRs to tasks.** Each FR becomes one or more tasks. Copy acceptance criteria verbatim from the FR row — do not rewrite them.
+3. **Assign waves.** Wave 0 = frozen contracts and schema definitions. Wave 1+ = implementation tasks ordered by dependency.
+4. **Compute dependencies.** A task is unblocked only when all tasks it depends on are complete. Mark dependencies as `[T{wave}.{n}]` references.
+5. **Identify parallelism windows.** Tasks in the same wave with disjoint write scopes can run in parallel. Note safe parallel pairs.
+6. **Write `work/kanban.md`** using this format per task row:
+   ```
+   | T{wave}.{n} | {title} | [ ] | {acceptance criteria} | {write scope} | [T{dep},...] |
+   ```
+7. **Write `work/SUBAGENT.md`** (under 80 lines): project summary, stack, frozen contracts, write scopes per task, subagent reporting convention (`RESULT: {T_ID} | files: [...] | summary: ... | validation: ...`).
+8. **Update `work/praxiskit-context.md`** with kanban path, current milestone, and open blockers.
+9. **Report** the generated paths and wait unless the user asks for execution with `kanban-to-agents`.
