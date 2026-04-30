@@ -1,40 +1,42 @@
 # PraxisKit
 
-**Turn a rough idea into shipped code — through governed handoffs between AI agents.**
+**Turn rough intent into shipped code through typed A-to-B transforms and recipes.**
 
-PraxisKit is a Claude Code / Codex plugin that turns rough intent into right-sized plans, governed execution, and acceptance evidence. The default flow has two user-level skills; the five atomic skills remain available when you want precise control.
+PraxisKit is a Claude Code / Codex plugin for software-development workflows. v3 replaces large integrated skills with small typed transforms. Recipes are named chains of those transforms.
 
 ```text
-shape-to-plan  →  plan-to-review
-     ↓                 ↓
- work/plan.md     code changes + work/review.md
- or full docs
+seed -> idea -> PRD -> task graph -> execution batch -> build -> review packet -> acceptance
 ```
 
-> Planning and execution stay separated. `plan-to-review` dry-runs unless you explicitly authorize implementation.
+> Modes are recipes, not flags inside a skill. Light, standard, heavy, and from-prd flows reuse the same transform contracts.
 
 [![Claude Code Marketplace](https://img.shields.io/badge/Claude%20Code%20Marketplace-Published-green?style=flat-square&logo=anthropic)](https://github.com/xmu-csnoob/praxiskit/blob/main/.claude-plugin/marketplace.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](#license)
 [![Stars](https://img.shields.io/github/stars/xmu-csnoob/praxiskit?style=flat-square&logo=github)](https://github.com/xmu-csnoob/praxiskit/stargazers)
 
-## Default Two-Skill Flow
+## Recipes
 
-| Skill | Use when... | Stops before |
-|-------|-------------|--------------|
-| `/praxiskit:shape-to-plan` | You have a seed, idea, or existing PRD and want the right-sized plan | Implementation |
-| `/praxiskit:plan-to-review` | You have `work/plan.md` or `work/kanban.md` and want the next batch inspected or explicitly executed | New scope |
+| Recipe | Chain | Use when... |
+|---|---|---|
+| Light | `seed-to-task-graph -> task-graph-to-batch -> batch-to-build -> build-to-review-packet -> review-to-acceptance` | Toy projects, scripts, prototypes, and direct acceptance criteria |
+| Standard | `seed-to-idea -> idea-to-prd -> prd-to-task-graph -> task-graph-to-batch -> batch-to-build -> build-to-review-packet -> review-to-acceptance` | Most feature work |
+| Heavy | Standard chain with repeated batches and parallel groups | Large projects with disjoint write scopes |
+| From PRD | `prd-to-task-graph -> task-graph-to-batch -> batch-to-build -> build-to-review-packet -> review-to-acceptance` | You already have a valid PRD |
 
-`shape-to-plan` chooses Light, Standard, or Full mode. Light mode writes compact `work/plan.md`; larger work writes the existing `work/idea.md`, `work/PRD.md`, `work/kanban.md`, and optionally `work/SUBAGENT.md`.
+Read `plugins/praxiskit/recipes/README.md` and the specific recipe file before starting.
 
-## Atomic Skills
+## Transforms
 
-| Skill | Use when... | Stops before |
-|-------|-------------|--------------|
-| `/praxiskit:seed-to-idea` | You have a rough thought, not a spec | Writing requirements |
-| `/praxiskit:idea-to-prd` | You need structured requirements | Task breakdown |
-| `/praxiskit:prd-to-kanban` | You have a PRD and need an execution plan | Implementation |
-| `/praxiskit:kanban-to-agents` | You want coordinated multi-agent build | User acceptance |
-| `/praxiskit:build-to-review` | Implementation is done — time to judge it | New scope |
+| Transform | Input | Output | Stops before |
+|---|---|---|---|
+| `/praxiskit:seed-to-idea` | seed | `work/idea.md` | PRD |
+| `/praxiskit:idea-to-prd` | `work/idea.md` | `work/PRD.md` | task graph |
+| `/praxiskit:seed-to-task-graph` | seed | `work/task-graph.md` + `work/SUBAGENT.md` | execution |
+| `/praxiskit:prd-to-task-graph` | `work/PRD.md` | `work/task-graph.md` + `work/SUBAGENT.md` | execution |
+| `/praxiskit:task-graph-to-batch` | `work/task-graph.md` | `work/execution-batch-{n}.md` | source changes |
+| `/praxiskit:batch-to-build` | authorized batch | code + `work/build-log-{n}.md` | acceptance decision |
+| `/praxiskit:build-to-review-packet` | build + task graph/PRD | `work/review.md` | acceptance decision |
+| `/praxiskit:review-to-acceptance` | `work/review.md` | `work/acceptance.md` | follow-up execution |
 
 ## Quick Start
 
@@ -45,57 +47,60 @@ claude plugin marketplace add xmu-csnoob/praxiskit
 # 2. Install the plugin
 claude plugin install praxiskit@xmu-csnoob-tools
 
-# 3. Run — default two-step flow
-/praxiskit:shape-to-plan  # create the lightest correct plan
-/praxiskit:plan-to-review # dry-run next batch unless execution is explicit
+# 3. Pick a recipe and invoke transforms in order
+/praxiskit:seed-to-task-graph   # light recipe start
+/praxiskit:task-graph-to-batch  # produces a dry-run batch by default
 ```
 
-For Codex: `codex plugin marketplace add xmu-csnoob/praxiskit`, then open `/plugins` → install `praxiskit`.
+To execute the dry-run batch, explicitly say: `execute this batch`.
+
+For Codex: `codex plugin marketplace add xmu-csnoob/praxiskit`, then open `/plugins` and install `praxiskit`.
+
+## Authorization
+
+Planning transforms may write artifacts under `work/`, but they do not modify project source.
+
+`batch-to-build` is the execution boundary. It refuses unless:
+
+- the batch artifact says `authorization: execute`
+- the user has explicitly confirmed execution in the current session
+
+`review-to-acceptance` also requires user input. It never auto-decides.
 
 ## What Gets Produced
 
-### work/plan.md — compact plan for light work
+### `work/task-graph.md`
 
-A compact task plan for small, single-pass changes. It is still governed by `plan.schema.md`, so domain lists, API details, schemas, and performance targets cannot be invented.
+A dependency-aware graph of tasks with acceptance criteria, write scopes, dependency edges, waves, and parallelism windows.
 
-```
-## Tasks
-| ID | Task | Status | Acceptance Criteria | Write Scope | Dependencies |
-|----|------|--------|---------------------|-------------|--------------|
-| L1 | ...  | [ ]    | Given..., when...   | `path`      | []           |
-```
-
-### work/kanban.md — the living board for larger work
-
-A dependency-aware task board with computed layers, parallelism windows, and a critical path. Agents edit it directly; you read the summary.
-
-```
-## Dependencies & Parallelism
-### Dependency Layers (topological order)
-| Layer | Tasks    | Depends On | Wave |
-|-------|----------|------------|------|
-| L0    | T0.1     | —          | W0   |
-| L1    | T0.2     | L0         | W0   |
-| L2    | T1.1,T1.2| L0..L1     | W1   |
-
-### Critical Path
-T0.1 → T0.2 → T1.1
+```markdown
+| ID | Title | Status | Acceptance Criteria | Write Scope | Dependencies |
+|----|-------|--------|---------------------|-------------|--------------|
+| T0.1 | ... | [ ] | Given..., when..., then... | `path/` | - |
 ```
 
-### work/SUBAGENT.md — shared agent context
+### `work/execution-batch-{n}.md`
 
-Every subagent reads this before touching anything. Stack, frozen contracts, write scopes, reporting convention — all in one place, never inferred.
+A selected set of unblocked tasks. It includes baseline evidence, parallel groups, sequential tasks, and authorization state.
+
+### `work/SUBAGENT.md`
+
+Shared execution context for agents: project summary, stack, frozen contracts, write scopes, and reporting convention.
+
+### `work/review.md` and `work/acceptance.md`
+
+`build-to-review-packet` writes inspectable evidence. `review-to-acceptance` records the user's formal decision.
 
 ## Install
 
-### Claude Code plugin (recommended)
+### Claude Code plugin
 
 ```bash
 claude plugin marketplace add xmu-csnoob/praxiskit
 claude plugin install praxiskit@xmu-csnoob-tools
 ```
 
-### Claude Code — local dev from this repo
+### Claude Code local dev
 
 ```bash
 claude --plugin-dir plugins/praxiskit
@@ -105,56 +110,25 @@ claude --plugin-dir plugins/praxiskit
 
 ```bash
 codex plugin marketplace add xmu-csnoob/praxiskit
-# then open /plugins → xmu-csnoob Tools → install praxiskit
+# then open /plugins -> xmu-csnoob Tools -> install praxiskit
 ```
-
-### Standalone skill (no plugin)
-
-```bash
-git clone https://github.com/xmu-csnoob/praxiskit.git ~/.claude/skills/praxiskit
-```
-
-## Calling Skills
-
-All skills live in the same plugin. Use `:` to invoke a specific step:
-
-```text
-/praxiskit:shape-to-plan        /praxiskit:plan-to-review
-/praxiskit:seed-to-idea        /praxiskit:idea-to-prd
-/praxiskit:prd-to-kanban       /praxiskit:kanban-to-agents
-/praxiskit:build-to-review
-```
-
-No need to install each skill separately — one plugin install gives you the integrated and atomic skills.
-
-## Why PraxisKit
-
-Most agent frameworks hand off via chat history. PraxisKit hands off via **artifacts**: structured documents that each skill writes and the next skill reads. The chain forces intent to become concrete before work begins, and forces review before work is accepted.
-
-- **Idea** → vague intent is shaped into a document
-- **PRD** → intent is translated into explicit requirements
-- **Kanban** → requirements are decomposed into dependency-ordered tasks
-- **Agents** → tasks are executed with explicit write scopes
-- **Review** → output is validated against the original idea
-
-## Examples
-
-See `examples/` in this repo:
-- `sample-prd.md` — example PRD input
-- `sample-kanban.md` — example kanban board output
-- `sample-praxiskit-context.md` — example SUBAGENT.md
 
 ## Repository Layout
 
-```
-plugins/praxiskit/skills/
-  shape-to-plan/        # seed/idea/PRD → right-sized plan
-  plan-to-review/       # authorized execution → work/review.md
-  seed-to-idea/         # raw seed → work/idea.md
-  idea-to-prd/          # idea → work/PRD.md
-  prd-to-kanban/        # PRD → work/kanban.md + work/SUBAGENT.md
-  kanban-to-agents/     # kanban → coordinated implementation
-  build-to-review/      # build → acceptance packet
+```text
+plugins/praxiskit/
+  recipes/              # named transform chains
+  references/           # clarification gate and field-state semantics
+  schemas/              # typed artifact schemas
+  skills/
+    seed-to-idea/
+    idea-to-prd/
+    seed-to-task-graph/
+    prd-to-task-graph/
+    task-graph-to-batch/
+    batch-to-build/
+    build-to-review-packet/
+    review-to-acceptance/
 ```
 
 ## License

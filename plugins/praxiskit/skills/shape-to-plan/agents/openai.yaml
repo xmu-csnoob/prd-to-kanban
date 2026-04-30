@@ -1,4 +1,0 @@
-interface:
-  display_name: "Shape to Plan"
-  short_description: "Create the right-sized PraxisKit plan"
-  default_prompt: "Use $shape-to-plan to turn this seed or idea into the lightest correct plan."

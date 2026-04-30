@@ -1,4 +1,0 @@
-interface:
-  display_name: "Build to Review"
-  short_description: "Show final results for user acceptance"
-  default_prompt: "Use $build-to-review to present the final implemented result for acceptance."

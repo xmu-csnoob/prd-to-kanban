@@ -1,0 +1,4 @@
+interface:
+  display_name: "Batch to Build"
+  short_description: "Execute an authorized batch and produce code + run log"
+  default_prompt: "Use $batch-to-build to execute work/execution-batch-{n}.md. Refuses without explicit authorization."

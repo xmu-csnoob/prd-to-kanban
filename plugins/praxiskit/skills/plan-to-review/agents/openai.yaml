@@ -1,4 +1,0 @@
-interface:
-  display_name: "Plan to Review"
-  short_description: "Execute an authorized plan and produce review evidence"
-  default_prompt: "Use $plan-to-review to dry-run the next batch, or explicitly ask it to execute the plan."

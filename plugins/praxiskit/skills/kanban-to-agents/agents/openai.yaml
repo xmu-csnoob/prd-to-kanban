@@ -1,4 +1,0 @@
-interface:
-  display_name: "Kanban to Agents"
-  short_description: "Orchestrate agents from Kanban plans"
-  default_prompt: "Use $kanban-to-agents to advance work/kanban.md with coordinated agents."

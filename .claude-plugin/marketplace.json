@@ -11,8 +11,8 @@
     {
       "name": "praxiskit",
       "source": "./plugins/praxiskit",
-      "description": "Turn product intent into governed agent execution and final acceptance review through composable skills (seed-to-idea → idea-to-prd → prd-to-kanban → kanban-to-agents → build-to-review).",
-      "version": "0.1.0",
+      "description": "Typed A-to-B transforms and recipes for agentic software work (seed/PRD → task graph → execution batch → build → review → acceptance).",
+      "version": "0.3.0",
       "author": {
         "name": "xmu-csnoob"
       },
@@ -24,23 +24,26 @@
         "skill",
         "agents",
         "prd",
-        "kanban",
+        "task-graph",
         "orchestration",
-        "praxiskit"
+        "praxiskit",
+        "transforms",
+        "recipes"
       ],
       "category": "Productivity",
       "tags": [
         "planning",
         "prd",
-        "kanban",
+        "task-graph",
         "multi-agent",
-        "orchestration"
+        "orchestration",
+        "recipes"
       ]
     },
     {
       "name": "prd-to-kanban",
       "source": "./plugins/prd-to-kanban",
-      "description": "Convert a PRD into a living Kanban board and shared subagent context.",
+      "description": "Classic standalone PRD-to-Kanban planner. For the v3 typed transform workflow, install the PraxisKit plugin.",
       "version": "1.0.0",
       "author": {
         "name": "xmu-csnoob"

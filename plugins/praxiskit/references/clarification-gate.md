@@ -1,6 +1,6 @@
 ---
 name: clarification-gate
-description: "Shared clarification module for PraxisKit v2. Called by seed-to-idea, idea-to-prd, and prd-to-kanban when required fields are missing. Handles 0/1-2/>=3 gap triage, AskUserQuestion for shallow gaps, and clarify-{stage}.md table for deep/many gaps."
+description: "Shared clarification module for PraxisKit v3 transforms. Called by seed-to-idea, idea-to-prd, seed-to-task-graph, and review-to-acceptance when required fields are missing. Handles 0/1-2/>=3 gap triage, AskUserQuestion for shallow gaps, and clarify-{stage}.md table for deep/many gaps."
 type: reference
 ---
 
@@ -12,7 +12,7 @@ The clarification gate is a shared decision procedure called by PraxisKit skills
 
 Call this gate after loading the stage schema and mapping available input to fields. Pass in:
 
-1. **stage**: `seed` | `idea` | `prd`
+1. **stage**: `seed` | `idea` | `prd` | `task-graph` | `acceptance`
 2. **gaps**: list of fields that are `filled-by-user` with no user source, or `forbidden-to-infer` with no user input. Each gap has:
    - `field`: field name
    - `kind`: `choice` (2-4 options, user picks one) | `short_text` (1-2 sentences) | `list` (user enumerates items) | `free_text` (multi-line answer) | `multi_field` (user must provide several named sub-fields, e.g., a struct definition or a set of config keys with values)
@@ -92,7 +92,7 @@ After writing this file, stop and tell the user:
 
 > "I need your input before I can write `work/{stage}.md`. I've created `work/clarify-{stage}.md` with the questions. Fill in the `<TBD: ...>` placeholders and say **continue** when done."
 
-Do NOT write the downstream document (idea.md / PRD.md / kanban.md) in the same turn.
+Do NOT write the downstream document (idea.md / PRD.md / task-graph.md / acceptance.md) in the same turn.
 
 ### Validation on "continue"
 
@@ -108,6 +108,8 @@ When the user says "continue":
    - Parse all answers
    - Archive: move `work/clarify-{stage}.md` -> `work/clarify-archive/{stage}-{YYYY-MM-DD}-{HHMM}.md`
    - Write the downstream document with all answers annotated `[user via clarify-{stage}]`
+
+For `stage = acceptance`, the downstream document is `work/acceptance.md`. The decision itself must always come from the user; there is no default and no inference path.
 
 ## Annotating Gate Answers in Output Documents
 

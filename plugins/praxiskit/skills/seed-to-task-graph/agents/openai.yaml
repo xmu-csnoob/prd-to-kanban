@@ -1,0 +1,4 @@
+interface:
+  display_name: "Seed to Task Graph"
+  short_description: "Light recipe entry: produce a task graph directly from a seed, skipping idea/PRD"
+  default_prompt: "Use $seed-to-task-graph for the light recipe — produce work/task-graph.md directly from this seed."
