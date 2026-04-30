@@ -1,0 +1,4 @@
+interface:
+  display_name: "PRD to Task Graph"
+  short_description: "Break PRDs into agent-ready dependency-aware task graphs"
+  default_prompt: "Use $prd-to-task-graph to convert this PRD into work/task-graph.md and work/SUBAGENT.md."

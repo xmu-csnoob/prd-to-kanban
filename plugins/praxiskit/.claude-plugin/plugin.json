@@ -1,7 +1,7 @@
 {
   "name": "praxiskit",
-  "version": "0.1.0",
-  "description": "Turn product intent into governed agent execution and final acceptance review through composable skills.",
+  "version": "0.3.0",
+  "description": "Typed A→B transforms for software development workflows: turn product intent into governed agent execution and final acceptance review through composable skills and recipes.",
   "author": {
     "name": "xmu-csnoob",
     "url": "https://github.com/xmu-csnoob"
@@ -16,14 +16,16 @@
     "skill",
     "agents",
     "prd",
-    "kanban",
+    "task-graph",
     "orchestration",
-    "praxiskit"
+    "praxiskit",
+    "transforms",
+    "recipes"
   ],
   "interface": {
     "displayName": "PraxisKit",
-    "shortDescription": "Intent-to-execution skills for agentic work",
-    "longDescription": "PraxisKit turns ideas into PRDs, Kanban plans, coordinated agent execution, and final result reviews for user acceptance.",
+    "shortDescription": "Typed transform pipelines for agentic software work",
+    "longDescription": "PraxisKit v3 turns ideas into right-sized plans, coordinated agent execution, and final result reviews via typed A→B transforms (skills) and recipes (named chains). See recipes/README.md for how to compose them.",
     "developerName": "xmu-csnoob",
     "category": "Productivity",
     "capabilities": [
@@ -32,9 +34,10 @@
     ],
     "websiteURL": "https://github.com/xmu-csnoob/praxiskit",
     "defaultPrompt": [
-      "Use PraxisKit to turn this rough idea into a PRD and implementation plan.",
-      "Use kanban-to-agents to advance work/kanban.md with coordinated agents.",
-      "Use build-to-review to present the final implemented result for acceptance."
+      "For toy projects or scripts, use the light recipe: invoke $seed-to-task-graph then $task-graph-to-batch.",
+      "For most features, use the standard recipe: invoke $seed-to-idea, then $idea-to-prd, then $prd-to-task-graph.",
+      "Execute only when I explicitly authorize it: $batch-to-build refuses without authorization.",
+      "Close the loop with $build-to-review-packet then $review-to-acceptance."
     ],
     "brandColor": "#0F766E"
   }

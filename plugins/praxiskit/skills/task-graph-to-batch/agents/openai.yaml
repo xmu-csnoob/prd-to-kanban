@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Graph to Batch"
+  short_description: "Select the next executable batch from a task graph"
+  default_prompt: "Use $task-graph-to-batch to select the next executable wave from work/task-graph.md."

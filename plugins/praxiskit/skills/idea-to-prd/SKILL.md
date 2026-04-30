@@ -1,6 +1,6 @@
 ---
 name: idea-to-prd
-description: "Turn work/idea.md, rough product notes, or a clarified idea into a concise implementation-ready PRD. Use before prd-to-kanban when requirements need goals, scope, acceptance criteria, constraints, and open questions."
+description: "Turn work/idea.md, rough product notes, or a clarified idea into a concise implementation-ready PRD. Use before prd-to-task-graph when requirements need goals, scope, acceptance criteria, constraints, and open questions."
 ---
 
 # Idea to PRD
@@ -8,8 +8,28 @@ description: "Turn work/idea.md, rough product notes, or a clarified idea into a
 Convert an idea brief into a PRD that is specific enough for planning, but not yet a task board.
 
 ```text
-work/idea.md -> idea-to-prd -> work/PRD.md -> prd-to-kanban
+work/idea.md -> idea-to-prd -> work/PRD.md -> prd-to-task-graph
 ```
+
+## Contract
+
+**Inputs:** `idea` (`work/idea.md`)
+**Output:** `prd` (`work/PRD.md`)
+**Schema:** `schemas/prd.schema.md` (v2.0)
+**Preconditions:**
+- `work/idea.md` exists and follows `schemas/idea.schema.md`
+- Every field in idea.md has a source annotation
+**Postconditions:**
+- Every PRD field has a `[user]`, `[user via *]`, or `[inferred from {field}]` annotation
+- No-New-Fields Rule holds: no PRD field exists without a traceable source in idea.md or this run's gate
+- All idea.md Open Questions are processed (promoted, carried, or removed)
+- Every FR has acceptance criteria in Given/When/Then form
+**Clarification gate:** fires per `references/clarification-gate.md` for any PRD field that has no `[user]` or `[user via *]` source in idea.md and is not `inferable`.
+**Side effects:**
+- Writes `work/PRD.md`
+- May write `work/clarify-prd.md` (archived after gate completes)
+- Updates `work/praxiskit-context.md`
+**Stop boundary:** Does NOT decompose into tasks. Hands off to `prd-to-task-graph`.
 
 ## Workflow
 
@@ -99,8 +119,8 @@ The agent MUST NOT write any value in the PRD that cannot be attributed to one o
 |----------|-------|--------|------|--------|
 | ... | User | implementation / release / future | blocking / non-blocking | [carried from idea.md] |
 
-## Kanban Handoff
-Recommended next step: invoke the `prd-to-kanban` skill.
+## Task Graph Handoff
+Recommended next step: invoke the `prd-to-task-graph` skill.
 ```
 
 Acceptance criteria must be observable. No vague criteria like "works well". Translate to concrete Given/When/Then behavior.

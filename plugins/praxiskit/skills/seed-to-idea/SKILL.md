@@ -11,7 +11,25 @@ Turn a rough spark into a short, useful idea brief. This is the first PraxisKit 
 seed -> seed-to-idea -> work/idea.md -> idea-to-prd
 ```
 
-Do not write a PRD, Kanban board, or implementation plan unless the user explicitly asks to continue to the next step.
+Do not write a PRD, task graph, or implementation plan unless the user explicitly asks to continue to the next step.
+
+## Contract
+
+**Inputs:** `seed` (raw user input — text, file, or pasted prompt)
+**Output:** `idea` (`work/idea.md`)
+**Schema:** `schemas/idea.schema.md` (v2.0)
+**Preconditions:**
+- A seed (text or file path) is provided
+**Postconditions:**
+- Every field in `work/idea.md` has a source annotation (`[user]`, `[user via gate]`, `[user via clarify-seed]`, `[inferred from {field}]`, or `[default]`)
+- No `## Assumptions` section exists; uncertainty lives in `## Open Questions` or inline `[inferred]`
+- All `filled-by-user` and `forbidden-to-infer` schema fields trace to a user source
+**Clarification gate:** fires per `references/clarification-gate.md` when required or forbidden-to-infer fields lack a user source. Cross-field rules in `idea.schema.md` may add gate fields based on seed content.
+**Side effects:**
+- Writes `work/idea.md`
+- May write `work/clarify-seed.md` (archived to `work/clarify-archive/` after gate completes)
+- Updates `work/praxiskit-context.md`
+**Stop boundary:** Does NOT write a PRD, task graph, or any downstream artifact. Hands off to `idea-to-prd` only when user requests.
 
 ## Workflow
 
