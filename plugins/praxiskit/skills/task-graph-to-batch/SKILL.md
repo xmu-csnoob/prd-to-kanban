@@ -29,7 +29,8 @@ work/task-graph.md -> task-graph-to-batch -> work/execution-batch-{n}.md -> batc
 **Side effects:**
 - Writes `work/execution-batch-{n}.md`
 - Reads but does NOT modify `work/task-graph.md`
-**Stop boundary:** Does NOT execute tasks, spawn agents, or modify project source code. Hands off to `batch-to-build`.
+- May update `work/praxiskit-context.md`
+**Stop boundary:** Does NOT execute tasks, spawn agents, create source directories, install dependencies, or modify project source code. Hands off to `batch-to-build`.
 
 ## Inputs
 
@@ -78,6 +79,13 @@ If the user uses one of those exact phrases in the current turn:
 
 Otherwise, the batch is dry-run only. Words like "advance", "continue", "next", or "proceed" are ambiguous and MUST NOT set `authorization: execute` by themselves.
 
+## Execution Phrase Routing
+
+If the current user turn is one of the exact execution phrases above:
+- If a current `work/execution-batch-{n}.md` already exists and matches the next step in `work/praxiskit-context.md`, do not generate another batch. Route to `batch-to-build` for that batch.
+- If no current batch exists and this skill must select one, write the new batch with `Authorization: execute`, `Approved by user: yes`, and the current timestamp.
+- Still do not modify source code in this skill. Execution belongs to `batch-to-build`.
+
 ## Workflow
 
 1. Check repo status and run preflight.
@@ -90,3 +98,7 @@ Otherwise, the batch is dry-run only. Words like "advance", "continue", "next", 
    - selected task status at batch generation time
 6. Update `work/praxiskit-context.md` with the batch path.
 7. Report the generated path. State that `batch-to-build` is the next step (with execution requiring user authorization).
+
+## Planning-Only Guardrail
+
+During this skill, do not create source directories, scaffold files, install packages, run formatters, or make any source-tree changes for the selected tasks. Creating directories such as `src/components/...` counts as implementation and belongs only in `batch-to-build` after authorization.

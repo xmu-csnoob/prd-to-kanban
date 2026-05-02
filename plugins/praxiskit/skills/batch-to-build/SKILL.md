@@ -1,6 +1,6 @@
 ---
 name: batch-to-build
-description: "Execute an authorized work/execution-batch-{n}.md by spawning agents (or running tasks locally) and produce a build artifact. REQUIRES explicit user authorization to run; otherwise refuses and reports dry-run only."
+description: "Execute an authorized work/execution-batch-{n}.md by dispatching subagents for parallel groups and produce a build artifact. REQUIRES explicit user authorization to run; otherwise refuses and reports dry-run only."
 ---
 
 # Batch to Build
@@ -28,10 +28,11 @@ work/execution-batch-{n}.md (authorized) -> batch-to-build -> code + work/build-
 - `work/build-log-{n}.md` records what was changed, by whom, and validation results
 - Parallel groups respected: no two tasks in the same group write to overlapping paths
 - Frozen contracts (per `work/SUBAGENT.md`) are not modified by any spawned worker
+- Every multi-task parallel group is dispatched through subagents; the orchestrator does not implement those tasks itself
 **Clarification gate:** does NOT fire. Authorization gating is the only user interaction.
 **Side effects:**
 - Modifies project source code
-- May spawn subagents per parallel group
+- Spawns subagents for each multi-task parallel group
 - Writes `work/build-log-{n}.md`
 - Updates `work/task-graph.md` task statuses
 - Updates `work/praxiskit-context.md` with last-run validation
@@ -65,6 +66,10 @@ Before any other action:
 2. **Re-validate baseline.** Re-run preflight commands. If baseline fails and this is not a baseline-repair batch, refuse — the user should re-batch. If this is a baseline-repair batch, proceed only with `T0.0`.
 3. **Mark selected tasks `[/]`** in `work/task-graph.md`.
 4. **Dispatch parallel groups one at a time.**
+   - If a parallel group contains 2+ tasks, the orchestrator MUST NOT implement those tasks directly.
+   - In Claude Code, use the `Task` tool once per task in the group before doing any implementation work. Dispatch all tasks in the group first, then wait for results.
+   - In Codex or other environments, use the platform's subagent/delegation tool. If no subagent tool exists, stop and report that the batch requires subagent-capable execution; do not silently fall back to sequential orchestrator edits.
+   - Only a single-task sequential group may be implemented by the orchestrator without subagents.
    - For each task in a parallel group, spawn one subagent with:
      - `work/SUBAGENT.md` path
      - The exact task line and acceptance criteria from the batch
@@ -93,7 +98,7 @@ Before any other action:
 ## Assignments
 | Task | Agent | Write Scope | Parallel Group | Result |
 |------|-------|-------------|----------------|--------|
-| T1.1 | ... | `path/` | A | done / blocked: reason |
+| T1.1 | subagent-{n} / orchestrator-single-task | `path/` | A | done / blocked: reason |
 
 ## Validation
 - `{command}`: {pass/fail}
@@ -102,6 +107,7 @@ Before any other action:
 - Files reviewed: {list}
 - Scope compliance: {note any violations}
 - Actual parallelism used: {N agents}
+- Dispatch method: Task tool / platform subagent tool / orchestrator-single-task
 
 ## Follow-Ups
 - {blocked task, failed check, or next batch}
