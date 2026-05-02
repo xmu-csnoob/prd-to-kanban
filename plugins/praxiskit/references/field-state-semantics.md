@@ -16,7 +16,7 @@ The value MUST come from the user -- either from the seed/input text directly, o
 
 **When violated:** Agent writes a value without user input -> this is a schema violation. The value must be removed and the field sent to the clarification gate.
 
-**In output documents:** Annotate with `[user]` (direct from seed/input), `[user via gate]` (from AskUserQuestion), or `[user via clarify-{stage}]` (from clarify table).
+**In output documents:** Annotate with `[user]` (direct from seed/input), `[user via gate]` (from host-native decision/input UI or chat clarification), or `[user via clarify-{stage}]` (from clarify table fallback).
 
 **Typical fields:** target_user, problem statement, success criteria, any named list of domain-specific items (e.g., metadata field names, API endpoints, acceptance thresholds).
 
@@ -40,7 +40,7 @@ The agent MUST NOT write any value for this field unless the user has explicitly
 
 **Critical rule: All list-type fields are forbidden-to-infer by default.** Lists of items (metadata fields, API operations, user roles, acceptance criteria values) cannot be reliably inferred -- any inferred list will be wrong in ways the user won't notice until implementation.
 
-**In output documents:** Annotate with `[user]` (same as filled-by-user, since the value came from gate answers).
+**In output documents:** Annotate with `[user]`, `[user via gate]`, or `[user via clarify-{stage}]`, matching how the user supplied the value.
 
 **Typical fields:** metadata field lists, performance targets, consistency guarantees, any list where the user's domain knowledge determines membership.
 

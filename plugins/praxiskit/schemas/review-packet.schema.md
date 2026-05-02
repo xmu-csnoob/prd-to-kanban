@@ -43,47 +43,9 @@ A `review_packet` is the inspectable artifact a user reads to decide acceptance.
 - Does NOT permit "Pass with caveats" — caveats become a Gap row.
 - Does NOT make the acceptance decision; that lives in `schemas/acceptance-decision.schema.md`.
 
-## Output Format (work/review.md)
+## Output Format
 
-```markdown
-# {Wave Review | Partial Build Review | Full Build Review | Regression Review}: {project}
-
-## Review Scope
-- Type: {one of the four}
-- Task graph completion: {N/M}
-- User-inspectable artifact: {yes / no}
-- Full-product acceptance allowed: {yes / no}
-
-## Original Promise
-{1-3 sentences from idea/PRD}
-
-## What Is Ready To Inspect
-- {artifact, URL, command, screenshot, file, or behavior}
-
-## Cannot Inspect Because
-- {reason or "N/A"}
-
-## Demo Path
-1. {step}
-2. {expected result}
-3. {value moment}
-
-## Acceptance Match
-| Source | Expectation | Result | Status | Evidence |
-|--------|-------------|--------|--------|----------|
-
-## Evidence
-- Validation: `{command}` -> {result}
-- Changed areas: `{path}`, `{path}`
-- Run logs: `{path}`
-
-## Gaps & Risks
-| Gap / Risk | Impact | Task Graph Link | Recommended Next Step |
-|------------|--------|-----------------|-----------------------|
-
-## Decision Hand-Off
-Next: `review-to-acceptance` for the formal accept/revise/continue decision.
-```
+Write `work/review.md` from `templates/review.md`.
 
 ## Changelog
 

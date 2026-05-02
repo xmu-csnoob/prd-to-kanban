@@ -10,6 +10,8 @@ Replaces the v2 integrated-skill direction with typed A-to-B transforms and reci
 - Kept `seed-to-idea` and `idea-to-prd` as typed planning transforms
 - Added schemas for seed triage, task graphs, execution batches, review packets, and acceptance decisions
 - Added light, standard, heavy, and from-prd recipes
+- Added recursive loop drivers: `next-iteration` and `auto-iterate`
+- Added acceptance archive/reset behavior for clean next-loop work directories
 - Removed v2 integrated skills: `shape-to-plan`, `plan-to-review`, and `plan.schema.md`
 - Renamed v2 concepts: `kanban` -> `task-graph`, `build-to-review` -> `build-to-review-packet`
 - Updated PraxisKit plugin prompts to point at recipes and explicit execution authorization

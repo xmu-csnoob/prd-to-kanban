@@ -48,7 +48,7 @@ Every transform that produces a new artifact has its own clarification gate per 
 - `idea-to-prd` gates on PRD fields that have no `[user]` source in idea.md (No-New-Fields Rule)
 - `prd-to-task-graph` does NOT gate but pre-flight validates blocking Open Questions and missing acceptance criteria
 
-If a gate fires, that step writes a `work/clarify-{stage}.md` table. The user fills it and says "continue" before the step completes.
+If a gate fires, that step first uses the host's interactive decision/input mechanism (Claude Code decision UI, Codex equivalent, or direct chat fallback). It writes `work/clarify-{stage}.md` only for bulk/async clarification or long nested answers.
 
 ### Inter-stage carry rules
 
@@ -58,4 +58,6 @@ If a gate fires, that step writes a `work/clarify-{stage}.md` table. The user fi
 
 ### What gets written
 
-All v3 artifacts: `idea.md`, `PRD.md`, `task-graph.md`, `SUBAGENT.md`, `execution-batch-{n}.md`, `build-log-{n}.md`, `review.md`, `acceptance.md`, plus any `clarify-*.md` files (archived after gate completes).
+All v3 artifacts: `idea.md`, `PRD.md`, `task-graph.md`, `SUBAGENT.md`, `execution-batch-{n}.md`, `build-log-{n}.md`, `review.md`, `acceptance.md`, plus any `clarify-*.md` files.
+
+After acceptance, `review-to-acceptance` archives completed-loop artifacts under `work/archive/iterations/` and resets active `work/` to the next-loop carry-forward set.

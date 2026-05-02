@@ -1,6 +1,6 @@
 ---
 name: seed-to-task-graph
-description: "Skip idea/PRD and produce work/task-graph.md directly from a seed. Used by the light recipe for toy projects, scripts, and prototypes where full product/engineering specs are overhead."
+description: "Light recipe: create work/task-graph.md directly from a seed."
 ---
 
 # Seed to Task Graph
@@ -21,7 +21,7 @@ seed -> seed-to-task-graph -> work/task-graph.md + work/SUBAGENT.md -> task-grap
 - Seed contains at least an implicit goal statement (or one is collected via gate)
 **Postconditions:**
 - `work/task-graph.md` exists with at least one task
-- Every task has acceptance criteria with a `[user]` or `[user via clarify-seed]` source
+- Every task has acceptance criteria with a `[user]`, `[user via gate]`, or `[user via clarify-seed]` source
 - No idea.md or PRD.md is produced (this is the explicit point of the light recipe)
 - All `forbidden-to-infer` cross-field rules from `idea.schema.md` (e.g., cache_metadata_fields) are honored — gate fires if applicable
 **Clarification gate:** fires per `references/clarification-gate.md` for any of:
@@ -30,7 +30,7 @@ seed -> seed-to-task-graph -> work/task-graph.md + work/SUBAGENT.md -> task-grap
 - Domain-specific lists triggered by cross-field rules → required gate
 **Side effects:**
 - Writes `work/task-graph.md` and `work/SUBAGENT.md`
-- May write `work/clarify-seed.md` (archived after gate completes)
+- May write `work/clarify-seed.md` only as an async/bulk fallback (archived after gate completes)
 - Updates `work/praxiskit-context.md` recording light-recipe usage
 **Stop boundary:** Does NOT execute tasks, write idea.md or PRD.md, or invoke other transforms.
 

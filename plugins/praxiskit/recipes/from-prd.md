@@ -56,3 +56,5 @@ This recipe deliberately skips `idea.md`. If the user later wants product framin
 ### Schema compatibility
 
 If the imported PRD doesn't follow `schemas/prd.schema.md` (e.g., it's a Confluence doc with different headings), the user must restructure it first. `prd-to-task-graph` will refuse to consume a non-conforming PRD.
+
+After acceptance, completed-loop artifacts move to `work/archive/iterations/`; active `work/` keeps only the next-loop carry-forward set.

@@ -22,14 +22,15 @@ It is planning-only. Do not implement tasks as part of the skill workflow.
 ### praxiskit (full pipeline)
 - Claude Code plugin: `plugins/praxiskit/.claude-plugin/plugin.json` + `plugins/praxiskit/skills/`
 - Codex plugin: `plugins/praxiskit/.codex-plugin/plugin.json` + `plugins/praxiskit/skills/`
-- Skills: `seed-to-idea`, `idea-to-prd`, `prd-to-kanban`, `kanban-to-agents`, `build-to-review`
+- Core transforms: `seed-to-idea`, `idea-to-prd`, `seed-to-task-graph`, `prd-to-task-graph`, `task-graph-to-batch`, `batch-to-build`, `build-to-review-packet`, `review-to-acceptance`
+- Driver skills: `next-iteration`, `auto-iterate`
 
 ### Marketplace catalogs
 - Claude Code: `.claude-plugin/marketplace.json`
 - Codex: `.agents/plugins/marketplace.json`
 
-PraxisKit is an intent-to-acceptance chain: capture idea, write PRD, generate Kanban, orchestrate agents, then present the final result for user acceptance. Both plugins are listed in the marketplace catalogs.
+PraxisKit is an intent-to-acceptance chain: capture idea, write PRD, generate a task graph, schedule batches, orchestrate agents, then present the result for user acceptance. Acceptance archives the finished loop under `work/archive/iterations/` and resets active `work/` for the next loop. Both plugins are listed in the marketplace catalogs.
 
 `plugins/prd-to-kanban/SKILL.md` is the source of truth for prd-to-kanban behavior. Keep root `SKILL.md` and `plugins/prd-to-kanban/skills/prd-to-kanban/SKILL.md` as thin entries.
 
-**Note on skill naming:** `plugins/praxiskit/skills/prd-to-kanban/` and `plugins/prd-to-kanban/skills/prd-to-kanban/` both register a skill named `prd-to-kanban`. Install one plugin or the other — not both. The PraxisKit plugin bundles all pipeline steps (including prd-to-kanban); the standalone plugin is for users who only need prd-to-kanban without the full chain.
+**Note on skill naming:** the standalone `prd-to-kanban` plugin is for users who only need PRD-to-Kanban planning. PraxisKit v3 uses `prd-to-task-graph` and related typed transforms for the full recursive loop.

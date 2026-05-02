@@ -1,6 +1,6 @@
 ---
 name: prd-to-task-graph
-description: "Convert work/PRD.md into work/task-graph.md and work/SUBAGENT.md for dependency-aware multi-agent implementation. Planning only; do not implement tasks. Replaces v2-M prd-to-kanban."
+description: "Create work/task-graph.md and work/SUBAGENT.md from work/PRD.md. Planning only."
 ---
 
 # PRD to Task Graph

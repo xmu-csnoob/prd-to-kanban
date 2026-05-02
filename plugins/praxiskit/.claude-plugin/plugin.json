@@ -36,6 +36,7 @@
     "defaultPrompt": [
       "For toy projects or scripts, use the light recipe: invoke $seed-to-task-graph then $task-graph-to-batch.",
       "For most features, use the standard recipe: invoke $seed-to-idea, then $idea-to-prd, then $prd-to-task-graph.",
+      "To resume a loop, use $next-iteration for one safe step or $auto-iterate for bounded repeated steps.",
       "Execute only when I explicitly authorize it: $batch-to-build refuses without authorization.",
       "Close the loop with $build-to-review-packet then $review-to-acceptance."
     ],

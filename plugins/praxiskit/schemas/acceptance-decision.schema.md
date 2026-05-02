@@ -20,6 +20,8 @@ The `acceptance_decision` artifact is the user's final accept/revise/continue ve
 | decision_rationale | filled-by-user | 1-3 sentences explaining the choice |
 | follow_up_tasks | filled-by-user (if revise) | List of follow-ups the user wants — feeds into a new task graph |
 | accepted_scope | filled-by-user (if accept_wave or partial) | Which parts are accepted; rest stays open |
+| archive_path | inferable | `work/archive/iterations/{timestamp}-{decision}/`, or `none` for `not_accept_yet` |
+| carried_forward | inferable | Minimal files left in active `work/` for the next loop |
 
 ## Decision Semantics
 
@@ -34,30 +36,13 @@ The `acceptance_decision` artifact is the user's final accept/revise/continue ve
 
 This transform REQUIRES user input. It MUST NOT auto-decide based on review-packet contents alone. The user explicitly states the decision.
 
-## Output Format (work/acceptance.md)
+Collect the decision through host-native choice/input UI when available. Do not ask the user to edit `work/acceptance.md`; the file is the recorded result after the decision, not the interaction surface.
 
-```markdown
-# Acceptance Decision: {project} — {date}
+## Output Format
 
-## Source
-- Review packet: `work/review.md`
-- Recipe: {light | standard | heavy | from-prd | bug-fix}
+Write `work/acceptance.md` from `templates/acceptance.md`.
 
-## Decision
-**{accept_wave | revise | continue_next_wave | not_accept_yet}**
-
-## Rationale
-{1-3 sentences}
-
-## Accepted Scope
-- {what is accepted, if applicable}
-
-## Follow-Up Tasks
-- {if decision is revise, list tasks to add to a new task graph}
-
-## Recipe Continuation
-- Next step: {recipe-specific next transform}
-```
+After writing the decision, `review-to-acceptance` archives closed-loop artifacts and resets active `work/` unless the decision is `not_accept_yet`.
 
 ## Changelog
 

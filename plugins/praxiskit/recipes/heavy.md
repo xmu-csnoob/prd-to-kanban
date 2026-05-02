@@ -70,3 +70,5 @@ The "integrated build" is just the project state after multiple batches have com
 ### Run logs
 
 Each batch produces its own `work/build-log-{n}.md`. The review packet may aggregate across these for the acceptance match table.
+
+After acceptance, completed-loop artifacts move to `work/archive/iterations/`; active `work/` keeps only the next-loop carry-forward set.

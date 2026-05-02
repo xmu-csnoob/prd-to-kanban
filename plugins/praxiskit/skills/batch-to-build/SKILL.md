@@ -1,180 +1,102 @@
 ---
 name: batch-to-build
-description: "Execute an authorized work/execution-batch-{n}.md by dispatching subagents for parallel groups and produce a build artifact. REQUIRES explicit user authorization to run; otherwise refuses and reports dry-run only."
+description: "Execute an authorized batch with subagents, validate, update statuses, and write build log."
 ---
 
 # Batch to Build
 
-Execute an authorized batch and produce code, tests, and run logs. This is the second half of the v2-M `kanban-to-agents` skill — the execution half. Scheduling is in `task-graph-to-batch`.
+Execute one authorized batch. Scheduling belongs to `task-graph-to-batch`; this skill implements, validates, closes bookkeeping, and stops before acceptance.
 
 ```text
-work/execution-batch-{n}.md (authorized) -> batch-to-build -> code + work/build-log-{n}.md
+work/execution-batch-{n}.md -> batch-to-build -> code + work/build-log-{n}.md + task statuses
 ```
+
+Build log template: `templates/build-log.md`.
 
 ## Contract
 
-**Inputs:** `execution_batch` (`work/execution-batch-{n}.md`) with `authorization: execute`, or a dry-run batch plus fresh explicit execution authorization that passes the upgrade checks below
-**Output:** `build` (modified project source + `work/build-log-{n}.md` + updated task statuses in `work/task-graph.md`)
-**Schema:** none for the build artifact itself; the run log follows the format below
-**Preconditions:**
-- Batch artifact exists at the specified path
-- Batch authorization is `execute`, or the user explicitly authorizes upgrading this exact dry-run batch in the current session
-- User has confirmed authorization in the current session with a narrow execution phrase
-- Baseline build/test passes, unless this is a baseline-repair batch (`baseline_repair = true`) whose only selected task is `T0.0 | Restore build baseline`
-- `baseline.status = unavailable` is not executable; route back to `task-graph-to-batch` after adding or selecting a baseline command
-**Postconditions:**
-- Selected tasks are either marked `[x]` (passed validation) or `[!]` (blocked, with reason)
-- `work/task-graph.md` reflects updated statuses
-- `work/build-log-{n}.md` records what was changed, by whom, and validation results
-- Parallel groups respected: no two tasks in the same group write to overlapping paths
-- Frozen contracts (per `work/SUBAGENT.md`) are not modified by any spawned worker
-- Every multi-task parallel group is dispatched through subagents; the orchestrator does not implement those tasks itself
-- Context usage is bounded: no repeated full-file reads of large artifacts, no full-source snapshots in prompts or logs, and task status updates are batched
-- Batch closeout is completed: residual work is classified, transient notes are archived or summarized, and the next iteration entry point is explicit
-**Clarification gate:** does NOT fire. Authorization gating is the only user interaction.
-**Side effects:**
-- Modifies project source code
-- Spawns subagents for each multi-task parallel group
-- Writes `work/build-log-{n}.md`
-- Updates `work/task-graph.md` task statuses
-- Updates `work/praxiskit-context.md` with last-run validation
-- May archive transient clarification or scratch notes after summarizing them in the build log/context. Do not archive canonical artifacts (`work/task-graph.md`, execution batches, build logs, review packets, or acceptance decisions).
-**Stop boundary:** Does NOT make acceptance decisions. Does NOT extend scope beyond the batch. Hands off to `build-to-review-packet` for inspection.
+**Inputs:** `work/execution-batch-{n}.md` with `Mode: execute`, or dry-run plus fresh scoped authorization that passes upgrade checks
+**Output:** modified source, `work/build-log-{n}.md`, updated `work/task-graph.md`, updated `work/praxiskit-context.md`
+**Preconditions:** batch exists; baseline is `pass` unless this is a valid baseline-repair batch; authorization is scoped to this batch
+**Postconditions:** selected tasks are `[x]` after validation or `[!]` with reason; parallel groups use subagents; closeout records next entry point
+**Stop boundary:** Does not make acceptance decisions or extend scope. Hand off to `build-to-review-packet`.
 
-## Authorization Check (FIRST STEP)
+## Must Rules
 
-Before any other action:
+- Authorization is required in the current session by host-native decision or direct chat confirmation scoped to this batch.
+- `baseline.status = unavailable` is not executable. Route back to `task-graph-to-batch`.
+- Any 2+ task parallel group is `subagent-driven`. The orchestrator must not implement those tasks directly.
+- Spawn all subagents for a parallel group before doing implementation work for that group.
+- Workers may modify only assigned write scopes and must not update PraxisKit bookkeeping files.
+- The orchestrator owns `work/task-graph.md`, `work/execution-batch-*.md`, `work/build-log-*.md`, `work/praxiskit-context.md`, `work/review.md`, and `work/acceptance.md`.
+- After all subagents in a group complete, the orchestrator continues automatically through reconcile, review, validation, final task status updates, build log, and closeout.
 
-1. Read the batch artifact and find the authorization field.
-2. If the batch is dry-run and the user did not explicitly authorize execution in the current turn, refuse. Output:
-   ```
+## Authorization
+
+1. Read the batch authorization block.
+2. If dry-run and no current-turn authorization exists, ask once with host-native input if available:
+   - question: "Execute this batch now?"
+   - options: `execute_now`, `keep_dry_run`
+   - include batch path, task IDs, parallel groups, subagent dispatch expectation, and validation commands
+3. If still not authorized, refuse:
+   ```text
    Cannot execute: batch is dry-run only.
-   To execute this exact batch, explicitly say "execute this batch" or "implement this wave".
+   Execution requires a yes/no decision for this exact batch.
    ```
-   Stop.
-3. If the batch is dry-run and the user explicitly authorized execution, run the dry-run upgrade checks:
-   - Re-read `work/task-graph.md`
-   - Confirm the task graph fingerprint is unchanged, or compare the selected task rows exactly
-   - Confirm selected task IDs, acceptance criteria, dependencies, write scopes, and recorded statuses still match the batch
-   - Confirm selected tasks are still `[ ]` and still unblocked
-   - Re-check baseline
-   - If any check fails, refuse and route back to `task-graph-to-batch`
-   - If all checks pass, update the batch artifact's authorization section to `Mode: execute`, `Approved by user: yes`, current timestamp, and `Upgraded by batch-to-build: yes`
-4. If the batch is already execute and the user has not confirmed in this session: ask once. If user says yes, proceed. Otherwise refuse.
-5. If user has confirmed: proceed.
+4. Never instruct the user to type specific command phrases. Use a host-native decision prompt or one direct yes/no chat question.
+5. If upgrading dry-run, verify:
+   - task graph fingerprint unchanged, or selected task rows still match exactly
+   - selected tasks are still `[ ]` and unblocked
+   - baseline rechecked and executable
+6. If checks pass, update authorization to `Mode: execute`, `Approved by user: yes`, `Authorization source: decision-ui | chat-confirmation`, current timestamp, and `Upgraded by batch-to-build: yes`.
+7. If any parallel group has 2+ tasks and the batch does not say `subagent-driven`, treat that as a contract defect and update/refuse before execution.
 
-## Context Budget Rules
+## Context Budget
 
-Execution should scale by keeping each agent's context narrow:
+- Treat the execution batch as the canonical input.
+- Read `work/task-graph.md` at most once during authorization/upgrade checks; use targeted lookup for statuses.
+- Do not read PRD, idea, or prior logs unless the batch lacks required execution detail.
+- Do not paste full source, task graph, PRD, or logs into subagent prompts.
+- Update `work/task-graph.md` in at most two grouped edits: mark selected tasks `[/]`, then final `[x]` / `[!]`.
+- Keep logs concise: file lists, summaries, validation, risks. No full source dumps.
+- For large builds, start the next batch in a fresh session with only `work/praxiskit-context.md`, the next batch, and `work/SUBAGENT.md`.
 
-- Treat `work/execution-batch-{n}.md` as the canonical execution input. It should contain the selected task rows, acceptance criteria, dependencies, write scopes, baseline, and validation commands needed for this run.
-- Read `work/task-graph.md` at most once during authorization/upgrade checks. If only statuses are needed, use targeted lookup of selected task IDs instead of repeatedly reading the full file.
-- Do not read `work/PRD.md`, `work/idea.md`, or prior build logs during execution unless the batch artifact is missing required information. Route missing execution detail back to `task-graph-to-batch`.
-- Do not paste full source files, full task graphs, full PRDs, or full build logs into subagent prompts. Pass paths plus the exact task row and acceptance criteria.
-- For large or long-running builds, prefer one fresh session per batch. `work/praxiskit-context.md`, the current execution batch, and `work/SUBAGENT.md` are the resume surface.
-- Use targeted file reads (`rg`, narrow `sed` ranges, or equivalent) for review and debugging. Avoid repeated full reads of files already inspected in the same turn.
-- Update `work/task-graph.md` in at most two grouped edits: one to mark all selected tasks `[/]`, and one after validation to mark final `[x]` / `[!]` statuses. Do not edit the task table once per task.
-- Keep `work/build-log-{n}.md` concise: file lists, summaries, validation, and residual risks. Do not embed full source or full command logs unless needed to explain a failure.
+## Workflow
 
-## Execution Workflow
-
-1. **Authorization check** (above). Refuse if not authorized.
-2. **Re-validate baseline.** Re-run preflight commands. If baseline fails and this is not a baseline-repair batch, refuse — the user should re-batch. If this is a baseline-repair batch, proceed only with `T0.0`.
-3. **Mark selected tasks `[/]`** in `work/task-graph.md` with one grouped edit covering every selected task.
-4. **Dispatch parallel groups one at a time.**
-   - If a parallel group contains 2+ tasks, the orchestrator MUST NOT implement those tasks directly.
-   - In Claude Code, use the `Task` tool once per task in the group before doing any implementation work. Dispatch all tasks in the group first, then wait for results.
-   - In Codex or other environments, use the platform's subagent/delegation tool. If no subagent tool exists, stop and report that the batch requires subagent-capable execution; do not silently fall back to sequential orchestrator edits.
-   - Only a single-task sequential group may be implemented by the orchestrator without subagents.
-   - For each task in a parallel group, spawn one subagent with:
-     - `work/SUBAGENT.md` path
-     - The exact task line and acceptance criteria from the batch
-     - Dependencies already completed
-     - Owned files/directories (from write_scope)
-     - Instruction: not alone in the codebase; do not revert others' edits
-     - Instruction: modify only the assigned task write scope. Do not update PraxisKit bookkeeping files; the orchestrator owns those.
-     - Instruction: read only the context files and source paths needed for the assigned task; do not read the entire task graph or PRD unless explicitly required by the task.
-     - Reporting format: `RESULT: {T_ID} | files: [...] | summary: ... | validation: ...`
-   - Use this compact subagent prompt shape:
-     ```text
-     Implement only {T_ID}: {title}.
-     Context paths: work/SUBAGENT.md and work/execution-batch-{n}.md.
-     Task row: {exact row from batch}.
-     Acceptance criteria: {exact criteria from batch}.
-     Owned write scope: {paths}.
-     Do not edit PraxisKit bookkeeping files. Do not touch files outside the write scope. Report: RESULT: ...
-     ```
-5. **Review returned changes** before integration: scope compliance, files changed, frozen-contract adherence. Prefer `git diff -- {owned_paths}` or equivalent targeted review.
-6. **Run validation.** Narrowest meaningful command first; broader tests if shared behavior changed. Run validation once after the parallel group is integrated unless an individual worker reports a blocking failure.
-7. **Mark `[x]` / `[!]`** only after validation, with one grouped edit covering final statuses for the batch.
-8. **Run batch closeout** (below).
-9. **Update `work/build-log-{n}.md`** with the run details and closeout summary.
-10. **Refresh `work/praxiskit-context.md`** with the next-session resume surface.
-11. **Stop** when the batch is complete, validation fails, or all remaining work in the batch is blocked.
-
-## Batch Closeout
-
-Before stopping, close the iteration loop:
-
-1. **Reconcile selected tasks.** Confirm every selected task is `[x]` or `[!]`. If validation failed after partial work, mark affected tasks `[!]` with the failure reason and leave unrelated unstarted tasks `[ ]`.
-2. **Classify leftovers.** Record each remaining item as one of:
-   - `next_batch`: still in scope and unblocked
-   - `blocked`: needs external/user/project decision
-   - `deferred`: intentionally out of this recipe or wave
-   - `cleanup`: documentation, test debt, or refactor follow-up discovered during execution
-3. **Close documentation drift.** Update only the docs touched by the batch or required to explain the current state. Do not rewrite PRDs, task graphs, or prior logs for style.
-4. **Archive transient notes.** If temporary clarification files, scratch plans, or superseded notes were created, move them under `work/archive/` only after summarizing any still-relevant content in `work/build-log-{n}.md`. Leave files in place when their lifecycle is unclear.
-5. **Write the next entry point.** In `work/praxiskit-context.md`, keep a compact handoff:
-   - last completed batch and validation result
-   - open blockers and owners/decisions needed
-   - recommended next skill: `task-graph-to-batch`, `build-to-review-packet`, or stop blocked
-   - exact artifacts to read in a fresh session
-
-Closeout is not user acceptance. Formal accept/revise/continue decisions still go through `build-to-review-packet` and `review-to-acceptance`.
-
-## Build Log Format (work/build-log-{n}.md)
-
-```markdown
-# Build Log: Batch {n} — {timestamp}
-
-## Scope
-- Tasks: [T_ID, T_ID, ...]
-- Mode: parallel / sequential / mixed
-- Baseline: pass / fail
-
-## Assignments
-| Task | Agent | Write Scope | Parallel Group | Result |
-|------|-------|-------------|----------------|--------|
-| T1.1 | subagent-{n} / orchestrator-single-task | `path/` | A | done / blocked: reason |
-
-## Validation
-- `{command}`: {pass/fail}
-
-## Review
-- Files reviewed: {list}
-- Scope compliance: {note any violations}
-- Actual parallelism used: {N agents}
-- Dispatch method: Task tool / platform subagent tool / orchestrator-single-task
-
-## Follow-Ups
-- {blocked task, failed check, or next batch}
+1. Authorize as above.
+2. Re-run baseline. If it fails and this is not a baseline-repair batch, refuse and route to re-batching.
+3. Mark all selected tasks `[/]` in one grouped edit.
+4. Execute groups in dependency order:
+   - For each 2+ task parallel group, dispatch one subagent per task before integrating results.
+   - In Claude Code, use `Task`; in Codex or other hosts, use the platform subagent/delegation tool.
+   - If a parallel group requires subagents and no subagent tool exists, stop and report the blocker.
+   - Single-task sequential groups may be implemented by the orchestrator.
+5. Subagent prompt must include only:
+   - `work/SUBAGENT.md`
+   - current execution batch path
+   - exact task row and acceptance criteria
+   - dependencies already complete
+   - owned write scope
+   - "you are not alone; do not revert others; do not edit PraxisKit bookkeeping"
+   - report format: `RESULT: {T_ID} | files: [...] | summary: ... | validation: ...`
+6. After the last subagent in a group completes, reconcile automatically:
+   - collect every `RESULT`
+   - inspect changed files and scope compliance with targeted diffs
+   - record blockers and any scope violations
+7. Run validation once after group integration unless a worker reported a blocking failure.
+8. Mark final task statuses `[x]` / `[!]` in one grouped edit. Subagent completion notifications alone do not close tasks.
+9. Write `work/build-log-{n}.md` from `templates/build-log.md`.
+10. Refresh `work/praxiskit-context.md`.
+11. Run closeout and stop.
 
 ## Closeout
-- Leftovers: next_batch / blocked / deferred / cleanup
-- Archived transient notes: {paths or none}
-- Next entry point: task-graph-to-batch / build-to-review-packet / stop blocked
-- Fresh-session resume: {minimal artifact list}
-```
 
-## Hand-Off
+Before stopping:
 
-After the batch completes, the next step depends on remaining work:
+- Confirm every selected task is `[x]` or `[!]`.
+- Classify leftovers as `next_batch`, `blocked`, `deferred`, or `cleanup`.
+- Update only docs touched by the batch or required to explain current state.
+- Archive transient scratch/clarify notes under `work/archive/` only after summarizing relevant content in the build log.
+- In `work/praxiskit-context.md`, record last batch, validation result, blockers, recommended next skill, and exact fresh-session artifacts.
 
-- More unblocked tasks exist → invoke `task-graph-to-batch` for the next wave
-- All tasks `[x]` → invoke `build-to-review-packet` to produce a review packet
-- Blocked → invoke `build-to-review-packet` with partial completion noted
-
-For long sessions, recommend starting the next batch in a fresh session using only:
-- `work/praxiskit-context.md`
-- the next `work/execution-batch-{n}.md`
-- `work/SUBAGENT.md`
+Formal accept/revise/continue decisions belong to `build-to-review-packet` and `review-to-acceptance`.

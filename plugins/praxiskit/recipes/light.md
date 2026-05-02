@@ -52,12 +52,14 @@ The light recipe just skips intermediate documents (idea, PRD), not the user-par
 
 - `work/seed.md` (if user provides a seed file) — input
 - `work/task-graph.md` + `work/SUBAGENT.md` — produced by step 1
-- `work/clarify-seed.md` — only if gate fires (archived after)
+- `work/clarify-seed.md` — only if the gate needs bulk/async fallback (archived after)
 - `work/execution-batch-{n}.md` — produced by step 2
 - `work/build-log-{n}.md` — produced by step 3
 - `work/review.md` — produced by step 5
 - `work/acceptance.md` — produced by step 6
 - `work/praxiskit-context.md` — updated by every step
+
+After acceptance, completed-loop artifacts move to `work/archive/iterations/`; active `work/` keeps only the next-loop carry-forward set.
 
 ### What does NOT get written
 

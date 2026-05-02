@@ -1,0 +1,4 @@
+interface:
+  display_name: "Next Iteration"
+  short_description: "Resume PraxisKit and run exactly one safe next transform"
+  default_prompt: "Use $next-iteration to read work/praxiskit-context.md, choose the next PraxisKit transform, and stop after one boundary."
