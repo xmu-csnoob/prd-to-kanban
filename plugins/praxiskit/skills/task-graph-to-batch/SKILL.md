@@ -25,6 +25,7 @@ work/task-graph.md -> task-graph-to-batch -> work/execution-batch-{n}.md -> batc
 - `work/execution-batch-{n}.md` lists selected tasks with parallel groups identified
 - Disjoint write scopes within each parallel group
 - Authorization defaults to `dry-run` unless the user explicitly authorizes implementation with a narrow execution phrase
+- The batch artifact is self-contained enough for `batch-to-build` to execute without rereading the PRD or full task graph
 **Clarification gate:** does NOT fire. Pre-flight-validated.
 **Side effects:**
 - Writes `work/execution-batch-{n}.md`
@@ -94,8 +95,13 @@ If the current user turn is one of the exact execution phrases above:
 4. Compute parallel groups and sequential tasks.
 5. Write `work/execution-batch-{n}.md` per `schemas/execution-batch.schema.md`, including:
    - task graph fingerprint (mtime or hash)
+   - exact selected task rows copied from `work/task-graph.md`
+   - exact acceptance criteria for each selected task
    - selected task dependencies
    - selected task status at batch generation time
+   - owned write scopes and frozen-contract paths relevant to the selected tasks
+   - validation command(s) selected during preflight
+   - explicit subagent dispatch expectations for every parallel group
 6. Update `work/praxiskit-context.md` with the batch path.
 7. Report the generated path. State that `batch-to-build` is the next step (with execution requiring user authorization).
 
