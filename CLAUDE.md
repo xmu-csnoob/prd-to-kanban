@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This repo packages two Claude Code / Codex plugins for the marketplace:
 
 1. **prd-to-kanban** (standalone) — converts PRDs/requirements into `work/kanban.md` and `work/SUBAGENT.md`. Planning-only; does not execute tasks.
-2. **praxiskit** (full pipeline) — intent-to-acceptance chain: `seed-to-idea → idea-to-prd → prd-to-kanban → kanban-to-agents → build-to-review`.
+2. **praxiskit** (full pipeline) — typed transform chain: `seed-to-idea -> idea-to-prd -> prd-to-task-graph -> task-graph-to-batch -> batch-to-build -> build-to-review-packet -> review-to-acceptance`, with `next-iteration` and `auto-iterate` as driver skills.
 
 Install one or the other, not both (PraxisKit bundles prd-to-kanban).
 
@@ -19,11 +19,16 @@ plugins/prd-to-kanban/SKILL.md                    # prd-to-kanban source of trut
 plugins/prd-to-kanban/skills/prd-to-kanban/       # Plugin-packaged entry (thin wrapper)
 plugins/prd-to-kanban/.claude-plugin/             # Claude Code plugin manifest
 plugins/prd-to-kanban/.codex-plugin/              # Codex plugin manifest
-plugins/praxiskit/skills/seed-to-idea/            # PraxisKit step 1
-plugins/praxiskit/skills/idea-to-prd/             # PraxisKit step 2
-plugins/praxiskit/skills/prd-to-kanban/           # PraxisKit step 3 (thin wrapper)
-plugins/praxiskit/skills/kanban-to-agents/        # PraxisKit step 4
-plugins/praxiskit/skills/build-to-review/         # PraxisKit step 5
+plugins/praxiskit/skills/seed-to-idea/            # PraxisKit planning transform
+plugins/praxiskit/skills/idea-to-prd/             # PraxisKit planning transform
+plugins/praxiskit/skills/seed-to-task-graph/      # Light recipe graph transform
+plugins/praxiskit/skills/prd-to-task-graph/       # PRD to task graph transform
+plugins/praxiskit/skills/task-graph-to-batch/     # Batch scheduling transform
+plugins/praxiskit/skills/batch-to-build/          # Authorized execution transform
+plugins/praxiskit/skills/build-to-review-packet/  # Review packet transform
+plugins/praxiskit/skills/review-to-acceptance/    # Acceptance/archive transform
+plugins/praxiskit/skills/next-iteration/          # One-step recursive driver
+plugins/praxiskit/skills/auto-iterate/            # Bounded multi-step driver
 plugins/praxiskit/.claude-plugin/                 # PraxisKit Claude Code plugin manifest
 plugins/praxiskit/.codex-plugin/                  # PraxisKit Codex plugin manifest
 .claude-plugin/marketplace.json                   # Claude Code marketplace catalog

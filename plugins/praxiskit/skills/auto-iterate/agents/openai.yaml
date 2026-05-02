@@ -1,0 +1,4 @@
+interface:
+  display_name: "Auto Iterate"
+  short_description: "Run bounded PraxisKit loops until a checkpoint or blocker"
+  default_prompt: "Use $auto-iterate to advance PraxisKit through multiple safe steps without auto-authorizing execution or acceptance."

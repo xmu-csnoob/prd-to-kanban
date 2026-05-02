@@ -25,6 +25,19 @@ seed -> idea -> PRD -> task graph -> execution batch -> build -> review packet -
 
 Read `plugins/praxiskit/recipes/README.md` and the specific recipe file before starting.
 
+## Recursive Iteration
+
+PraxisKit treats `work/` as the active working set for the current loop. When `review-to-acceptance` records a decision other than `not_accept_yet`, it archives the completed loop under `work/archive/iterations/{timestamp}-{decision}/`, resets active `work/` to the minimal carry-forward files, and rewrites `work/praxiskit-context.md` with the next entry point.
+
+Use the driver skills when you want the loop advanced for you:
+
+| Driver | What it does | Stops at |
+|---|---|---|
+| `/praxiskit:next-iteration` | Reads `work/praxiskit-context.md`, chooses the next transform, and runs exactly one step | That transform's normal boundary |
+| `/praxiskit:auto-iterate` | Repeats `next-iteration` across multiple waves within a budget | Execution authorization, acceptance input, blocker, failed validation, completion, or budget |
+
+The drivers are orchestration only. They do not auto-authorize source changes, auto-accept reviews, or bypass subagent rules.
+
 ## Transforms
 
 | Transform | Input | Output | Stops before |
@@ -37,6 +50,13 @@ Read `plugins/praxiskit/recipes/README.md` and the specific recipe file before s
 | `/praxiskit:batch-to-build` | authorized batch | code + `work/build-log-{n}.md` | acceptance decision |
 | `/praxiskit:build-to-review-packet` | build + task graph/PRD | `work/review.md` | acceptance decision |
 | `/praxiskit:review-to-acceptance` | `work/review.md` | `work/acceptance.md` | follow-up execution |
+
+## Drivers
+
+| Driver | Input | Output |
+|---|---|---|
+| `/praxiskit:next-iteration` | `work/praxiskit-context.md` or active `work/` artifacts | one selected transform step |
+| `/praxiskit:auto-iterate` | current PraxisKit state plus optional budget | repeated safe steps until checkpoint |
 
 ## Quick Start
 
@@ -54,7 +74,7 @@ claude plugin install praxiskit@xmu-csnoob-tools
 /praxiskit:task-graph-to-batch  # produces a dry-run batch by default
 ```
 
-To execute the dry-run batch, explicitly say: `execute this batch`.
+To execute a dry-run batch, approve the exact batch through the host decision UI or answer a direct yes/no question for that batch. After a loop closes, use `/praxiskit:next-iteration` to continue from `work/praxiskit-context.md`.
 
 For Codex: `codex plugin marketplace add xmu-csnoob/praxiskit`, then open `/plugins` and install `praxiskit`.
 
@@ -98,12 +118,12 @@ The first transform creates:
 The second transform creates:
 
 - `work/execution-batch-{n}.md`: the next unblocked set of tasks
-- `authorization: dry-run` by default
+- `Mode: dry-run` by default
 
 At this point no source files should be modified. Review the batch. If it looks right, explicitly authorize execution:
 
 ```text
-execute this batch
+yes, execute this exact batch
 ```
 
 Then invoke:
@@ -123,10 +143,10 @@ Use this for most feature work where intent, scope, non-goals, and acceptance cr
 /praxiskit:task-graph-to-batch
 ```
 
-Review `work/task-graph.md` and `work/execution-batch-{n}.md`. To run the batch, say one of the exact execution phrases, for example:
+Review `work/task-graph.md` and `work/execution-batch-{n}.md`. To run the batch, approve the exact batch through the host decision UI or answer the direct yes/no execution question.
 
 ```text
-execute this batch
+yes, execute this exact batch
 ```
 
 Then continue:
@@ -138,6 +158,8 @@ Then continue:
 ```
 
 `review-to-acceptance` records your decision. It does not infer accept/revise/continue by itself.
+
+After acceptance, the loop is archived and active `work/` is reset. Run `/praxiskit:next-iteration` to continue one more wave, or `/praxiskit:auto-iterate` to keep advancing until the next checkpoint.
 
 ### 4. From-PRD Recipe
 
@@ -156,12 +178,19 @@ Heavy uses the same transforms as standard, but repeats batch/build/review cycle
 
 ```text
 /praxiskit:task-graph-to-batch
-execute this batch
+yes, execute this exact batch
 /praxiskit:batch-to-build
 /praxiskit:build-to-review-packet
 ```
 
 After review, run `task-graph-to-batch` again for the next unblocked wave. Keep repeating until `review-to-acceptance` closes the work.
+
+You can replace the manual repeat with:
+
+```text
+/praxiskit:next-iteration   # one safe step
+/praxiskit:auto-iterate     # bounded multi-step loop
+```
 
 ## Authorization
 
@@ -170,19 +199,9 @@ Planning transforms may write artifacts under `work/`, but they do not modify pr
 `batch-to-build` is the execution boundary. It refuses unless:
 
 - the batch artifact says `authorization: execute`
-- the user has explicitly confirmed execution in the current session
+- the user has explicitly confirmed execution for that exact batch in the current session
 
-Valid execution phrases are intentionally narrow:
-
-```text
-execute this batch
-implement this wave
-modify code for this batch
-run agents for this batch
-delegate implementation for this batch
-```
-
-Words like `continue`, `next`, `advance`, or `proceed` are not execution authorization.
+Use host-native decision/input when available. Otherwise, answer one direct yes/no question for the exact batch. Words like `continue`, `next`, `advance`, or `proceed` are not execution authorization by themselves.
 
 If a dry-run batch is later authorized, `batch-to-build` first checks that the batch is still fresh: selected tasks, dependencies, write scopes, status, and baseline must still match.
 
@@ -222,7 +241,11 @@ Shared execution context for agents: project summary, stack, frozen contracts, w
 
 ### `work/review.md` and `work/acceptance.md`
 
-`build-to-review-packet` writes inspectable evidence. `review-to-acceptance` records the user's formal decision.
+`build-to-review-packet` writes inspectable evidence. `review-to-acceptance` records the user's formal decision, then archives the loop and resets active `work/` unless the decision is `not_accept_yet`.
+
+### `work/archive/iterations/` and `work/praxiskit-context.md`
+
+Completed loops are durable archives. Active `work/` stays small, and `work/praxiskit-context.md` tells `next-iteration` or `auto-iterate` which files to read next.
 
 ## Install
 
@@ -262,6 +285,8 @@ plugins/praxiskit/
     batch-to-build/
     build-to-review-packet/
     review-to-acceptance/
+    next-iteration/
+    auto-iterate/
 ```
 
 ## License
