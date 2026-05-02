@@ -1,6 +1,6 @@
 ---
 name: review-to-acceptance
-description: "Take work/review.md and collect the user's formal accept/revise/continue/not-yet decision into work/acceptance.md. Closes any PraxisKit recipe. REQUIRES user input — does NOT auto-decide."
+description: "Collect the user's accept/revise/continue decision into work/acceptance.md. Requires input."
 ---
 
 # Review to Acceptance
@@ -33,7 +33,7 @@ work/review.md -> review-to-acceptance -> work/acceptance.md -> recipe complete 
 ## Workflow
 
 1. **Read `work/review.md`.** Summarize the review-packet's key findings: what passes, what's a gap, what's unknown.
-2. **Surface the decision question.** Ask the user via `references/clarification-gate.md`:
+2. **Surface the decision question.** Ask the user via `references/clarification-gate.md`, using host-native choice input rather than a file whenever available:
    - Question: "Based on this review, what's your decision?"
    - Kind: `choice` (single-select)
    - Options:
@@ -41,9 +41,9 @@ work/review.md -> review-to-acceptance -> work/acceptance.md -> recipe complete 
      - B. `continue_next_wave` — this wave is fine; advance to the next
      - C. `revise` — issues must be fixed; record follow-ups
      - D. `not_accept_yet` — pause; I want more inspection time
-3. **If decision is `revise`:** ask for follow-up tasks. Use `list` kind gap. Each follow-up should be specific enough to become a task in a new task graph.
-4. **Collect rationale.** Ask for a 1-3 sentence explanation of the decision.
-5. **Write `work/acceptance.md`** per `schemas/acceptance-decision.schema.md`.
+3. **If decision is `revise`:** ask for follow-up tasks with interactive list/freeform input. Each follow-up should be specific enough to become a task in a new task graph.
+4. **Collect rationale.** Ask for a 1-3 sentence explanation of the decision with interactive text input.
+5. **Write `work/acceptance.md`** from `templates/acceptance.md` per `schemas/acceptance-decision.schema.md`.
 6. **Update `work/praxiskit-context.md`** with the recipe state.
 7. **Report next steps based on decision:**
    - `accept_wave` + more waves → recommend `task-graph-to-batch`

@@ -34,30 +34,11 @@ The `acceptance_decision` artifact is the user's final accept/revise/continue ve
 
 This transform REQUIRES user input. It MUST NOT auto-decide based on review-packet contents alone. The user explicitly states the decision.
 
-## Output Format (work/acceptance.md)
+Collect the decision through host-native choice/input UI when available. Do not ask the user to edit `work/acceptance.md`; the file is the recorded result after the decision, not the interaction surface.
 
-```markdown
-# Acceptance Decision: {project} — {date}
+## Output Format
 
-## Source
-- Review packet: `work/review.md`
-- Recipe: {light | standard | heavy | from-prd | bug-fix}
-
-## Decision
-**{accept_wave | revise | continue_next_wave | not_accept_yet}**
-
-## Rationale
-{1-3 sentences}
-
-## Accepted Scope
-- {what is accepted, if applicable}
-
-## Follow-Up Tasks
-- {if decision is revise, list tasks to add to a new task graph}
-
-## Recipe Continuation
-- Next step: {recipe-specific next transform}
-```
+Write `work/acceptance.md` from `templates/acceptance.md`.
 
 ## Changelog
 

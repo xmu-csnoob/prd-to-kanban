@@ -1,6 +1,6 @@
 ---
 name: build-to-review-packet
-description: "Inspect an implemented build and produce work/review.md — a structured review packet mapping delivered behavior to acceptance criteria. Use after batch-to-build or any implementation work, before review-to-acceptance."
+description: "Create work/review.md mapping build evidence to acceptance criteria."
 ---
 
 # Build to Review Packet
@@ -60,13 +60,13 @@ If the implementation cannot be run or inspected, state that clearly under `## C
    - Status: Pass / Gap / Unknown
    - Evidence: pointer to evidence (no fabrication; if no evidence, status is Unknown)
 5. **Surface gaps.** List mismatches, incomplete tasks, risks. Each gap should link to a follow-up task ID if one exists in the task-graph.
-6. **Write `work/review.md`** per `schemas/review-packet.schema.md`.
+6. **Write `work/review.md`** from `templates/review.md` per `schemas/review-packet.schema.md`.
 7. **Update `work/praxiskit-context.md`** with last-validation entry.
 8. **Hand off** to `review-to-acceptance` for the formal decision.
 
 ## Output Format
 
-See `schemas/review-packet.schema.md` for the canonical format. Key constraints:
+Use `templates/review.md` and `schemas/review-packet.schema.md`. Key constraints:
 
 - Every Pass must have evidence
 - "Pass with caveats" → split into Pass + Gap rows

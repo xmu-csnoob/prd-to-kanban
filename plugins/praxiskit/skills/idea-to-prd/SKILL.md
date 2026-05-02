@@ -1,6 +1,6 @@
 ---
 name: idea-to-prd
-description: "Turn work/idea.md, rough product notes, or a clarified idea into a concise implementation-ready PRD. Use before prd-to-task-graph when requirements need goals, scope, acceptance criteria, constraints, and open questions."
+description: "Create work/PRD.md from work/idea.md while preserving user-source traceability."
 ---
 
 # Idea to PRD
@@ -27,7 +27,7 @@ work/idea.md -> idea-to-prd -> work/PRD.md -> prd-to-task-graph
 **Clarification gate:** fires per `references/clarification-gate.md` for any PRD field that has no `[user]` or `[user via *]` source in idea.md and is not `inferable`.
 **Side effects:**
 - Writes `work/PRD.md`
-- May write `work/clarify-prd.md` (archived after gate completes)
+- May write `work/clarify-prd.md` only as an async/bulk fallback (archived after gate completes)
 - Updates `work/praxiskit-context.md`
 **Stop boundary:** Does NOT decompose into tasks. Hands off to `prd-to-task-graph`.
 
@@ -66,61 +66,10 @@ The agent MUST NOT write any value in the PRD that cannot be attributed to one o
 **Compliant behavior:**
 > Gate asks: "What metadata fields does a KV-cache entry need?"
 > User answers: "layer, token_range, dtype"
-> PRD writes: `FR4: KV-cache entries carry: layer, token_range, dtype [user via clarify-prd]`
+> PRD writes: `FR4: KV-cache entries carry: layer, token_range, dtype [user via gate]`
 
-## PRD Format
+## Output
 
-```markdown
-# PRD: {project or feature}
+Write `work/PRD.md` from `templates/prd.md`.
 
-## Summary
-{2-4 sentences} [inferred from problem + desired_future]
-
-## Goals
-- {measurable outcome} [{source}]
-
-## Repo Baseline
-| Item | Evidence | Notes |
-|------|----------|-------|
-| Platform / stack | `{file}` | |
-| Test command | `{command}` | Declared / inferred / unknown |
-| Build command | `{command}` | Declared / inferred / unknown |
-
-## Non-Goals
-- {explicitly out of scope} [{source}]
-
-## Users & Use Cases
-| User | Need | Success Looks Like | Source |
-|------|------|--------------------|--------|
-| {user} | {need} | {success} | [{source}] |
-
-## Functional Requirements
-| ID | Requirement | Priority | Validation | Acceptance Criteria | Source |
-|----|-------------|----------|------------|---------------------|--------|
-| FR1 | ... | Must | unit | Given ..., when ..., then ... | [user] |
-
-## Non-Functional Requirements
-- Performance: [{source}]
-- Reliability: [{source}]
-- Security / Privacy: [{source}]
-
-## UX / Workflow
-1. {step} [inferred from core_loop]
-
-## Edge Cases
-- {case and expected behavior} [{source}]
-
-## Milestones
-| ID | Title | Outcome | Source |
-|----|-------|---------|--------|
-
-## Open Questions
-| Question | Owner | Blocks | Type | Source |
-|----------|-------|--------|------|--------|
-| ... | User | implementation / release / future | blocking / non-blocking | [carried from idea.md] |
-
-## Task Graph Handoff
-Recommended next step: invoke the `prd-to-task-graph` skill.
-```
-
-Acceptance criteria must be observable. No vague criteria like "works well". Translate to concrete Given/When/Then behavior.
+Acceptance criteria must be observable. Do not use vague criteria like "works well"; translate them to concrete Given/When/Then behavior.

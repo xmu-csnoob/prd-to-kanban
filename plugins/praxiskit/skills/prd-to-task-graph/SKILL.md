@@ -1,6 +1,6 @@
 ---
 name: prd-to-task-graph
-description: "Convert work/PRD.md into work/task-graph.md and work/SUBAGENT.md for dependency-aware multi-agent implementation. Planning only; do not implement tasks. Replaces v2-M prd-to-kanban."
+description: "Create work/task-graph.md and work/SUBAGENT.md from work/PRD.md. Planning only."
 ---
 
 # PRD to Task Graph
@@ -94,7 +94,7 @@ After all pre-flight checks pass, decompose the PRD into a dependency-aware task
    ```
    | T{wave}.{n} | {title} | [ ] | {acceptance criteria} | {write scope} | [T{dep},...] |
    ```
-7. **Write `work/SUBAGENT.md`** (under 80 lines): project summary, stack, frozen contracts, write scopes per task, subagent reporting convention (`RESULT: {T_ID} | files: [...] | summary: ... | validation: ...`), and the worker/orchestrator boundary below.
+7. **Write `work/SUBAGENT.md`** (under 90 lines): project summary, stack, frozen contracts, write scopes per task, context budget rules, subagent reporting convention (`RESULT: {T_ID} | files: [...] | summary: ... | validation: ...`), and the worker/orchestrator boundary below.
 8. **Update `work/praxiskit-context.md`** with task-graph path, current milestone, and open blockers.
 9. **Report** the generated paths and wait unless the user invokes `task-graph-to-batch`.
 
@@ -103,6 +103,10 @@ After all pre-flight checks pass, decompose the PRD into a dependency-aware task
 Every generated `work/SUBAGENT.md` must include this rule:
 
 ```markdown
+## Context Budget
+
+Workers read this file plus their assigned `work/execution-batch-{n}.md` task entry. They should read only source files needed for their write scope and should not load full PRDs, full task graphs, previous build logs, or unrelated source trees unless the task explicitly requires it.
+
 ## Write-Scope Boundary
 
 Spawned workers may modify only their assigned task write scope. They must not update PraxisKit bookkeeping files.
