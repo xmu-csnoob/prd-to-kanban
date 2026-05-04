@@ -14,6 +14,13 @@ For each recipe, the procedure is:
 4. Once the first transform's stop boundary is reached, invoke the next transform.
 5. Continue until the recipe completes (typically with `review-to-acceptance`).
 
+Two driver skills can handle the chaining:
+
+- `next-iteration` reads `work/praxiskit-context.md`, chooses the next transform, runs one step, and stops at that transform's boundary.
+- `auto-iterate` repeats `next-iteration` within a budget until execution authorization, acceptance input, clarification, blocker, failed validation, completion, or budget stops the loop.
+
+Drivers do not change the recipe algebra. They are orchestration wrappers around the same transform contracts.
+
 ## Authorization Boundaries
 
 Every recipe has natural pauses where the user must explicitly authorize the next step:
@@ -27,6 +34,17 @@ Recipe documents list these checkpoints explicitly.
 ## Recursive Iterations
 
 After `review-to-acceptance` records a decision other than `not_accept_yet`, it archives the completed loop under `work/archive/iterations/{timestamp}-{decision}/` and resets active `work/` to the minimal carry-forward files for the next loop. This keeps recipes recursive: each iteration starts from a clean active work directory plus a durable archive pointer in `work/praxiskit-context.md`.
+
+The next invocation should read `work/praxiskit-context.md` first:
+
+- Remaining unblocked work -> `task-graph-to-batch`
+- Current dry-run or authorized batch -> `batch-to-build`
+- Completed build evidence -> `build-to-review-packet`
+- Review packet -> `review-to-acceptance`
+- Follow-ups after `revise` -> the recipe's task-graph-producing transform
+- Completed acceptance with no remaining work -> stop
+
+Use `next-iteration` for one hop, or `auto-iterate` for bounded repeated hops.
 
 ## Available Recipes
 
