@@ -37,6 +37,7 @@
       "For toy projects or scripts, use the light recipe: invoke $seed-to-task-graph then $task-graph-to-batch.",
       "For most features, use the standard recipe: invoke $seed-to-idea, then $idea-to-prd, then $prd-to-task-graph.",
       "To resume a loop, use $next-iteration for one safe step or $auto-iterate for bounded repeated steps.",
+      "When PraxisKit offers a host-native choice prompt, use it to continue planning or stop instead of asking me to type the next slash command.",
       "Execute only when I explicitly authorize it: $batch-to-build refuses without authorization.",
       "Close the loop with $build-to-review-packet then $review-to-acceptance."
     ],
