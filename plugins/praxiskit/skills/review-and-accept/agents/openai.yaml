@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review and Accept"
+  short_description: "Produce a review packet, collect the accept/revise/continue/not-yet decision, and archive the iteration"
+  default_prompt: "Use $review-and-accept to inspect the implementation against acceptance criteria, then record my decision and archive the loop."

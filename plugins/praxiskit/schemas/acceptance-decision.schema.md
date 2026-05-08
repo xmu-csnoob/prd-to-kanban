@@ -1,7 +1,7 @@
 ---
 schema_name: acceptance-decision
 schema_version: "3.0"
-used_by: review-to-acceptance
+used_by: review-and-accept
 input_file: work/review.md
 output_file: work/acceptance.md
 ---
@@ -42,7 +42,7 @@ Collect the decision through host-native choice/input UI when available. Do not 
 
 Write `work/acceptance.md` from `templates/acceptance.md`.
 
-After writing the decision, `review-to-acceptance` archives closed-loop artifacts and resets active `work/` unless the decision is `not_accept_yet`.
+After writing the decision, `review-and-accept` Phase 3 archives closed-loop artifacts and resets active `work/` unless the decision is `not_accept_yet`.
 
 ## Changelog
 

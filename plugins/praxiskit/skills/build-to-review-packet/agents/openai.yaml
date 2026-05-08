@@ -1,4 +1,0 @@
-interface:
-  display_name: "Build to Review Packet"
-  short_description: "Produce a structured review packet from an implemented build"
-  default_prompt: "Use $build-to-review-packet to inspect the implementation and produce work/review.md."

@@ -1,67 +1,60 @@
 ---
 name: clarification-gate
-description: "Shared PraxisKit decision procedure for missing user-owned fields. Uses host-native decision/input UI first; writes clarify files only for bulk or async fallback."
+description: "Field states, source annotations, and decision procedure for missing user-owned fields. Strong UX rules for sparse input. Single runtime reference for every gate-firing transform."
 type: reference
 ---
 
 # Clarification Gate
 
-Use this gate after mapping available user input to a stage schema. It resolves fields that are `filled-by-user` or `forbidden-to-infer` before writing the downstream artifact.
+Single runtime reference for every gate-firing transform. Use this to decide which fields go to the user, how to ask, and how to annotate sources in the output document.
 
-Clarification is an interaction, not a default file workflow. Prefer the host's structured input surface; use Markdown only when the answer shape is too large or async.
+## Field States (set per field in each schema)
 
-## Input
+| State | Meaning | What the agent may do |
+|---|---|---|
+| `filled-by-user` | Value MUST come from user (seed text or gate answer) | Never infer. If missing → gate. |
+| `inferable` | Value MAY be derived from a `[user]` field | Annotate `[inferred from {field}]`. Must name the source field. "I assumed this because seed mentions X" is valid. "This seemed reasonable" is not. |
+| `forbidden-to-infer` | Value MUST NOT be written without explicit user input | Never infer. If missing → gate. If gate not possible → blocking Open Question. |
 
-Pass:
+**All list-type fields default to `forbidden-to-infer`** unless the schema explicitly marks them `inferable`. Domain-specific lists (metadata fields, API params, performance targets, consistency guarantees) are never inferred — any inferred list is wrong in ways the user won't notice until implementation.
 
-- `stage`: `seed` | `idea` | `prd` | `task-graph` | `acceptance`
-- `gaps`: missing user-owned fields, each with:
-  - `field`
-  - `kind`: `choice` | `short_text` | `list` | `free_text` | `multi_field`
-  - `question`
-  - `options` for `choice`
+## Source Annotations (apply to every output field)
+
+- `[user]` — direct from seed/input text
+- `[user via gate]` — host-native UI or chat clarification
+- `[user via clarify-{stage}]` — bulk async clarify file
+- `[inferred from {field}]` — derivable from a `[user]` field
+- `[default]` — explicit schema default
+
+## Sparse-Input UX Rule (CRITICAL)
+
+**Most seeds are 1-2 sentences. Most early ideas are sparse. This is exactly when drift hurts most.** Apply these rules without exception:
+
+- A seed of < ~200 chars or 3 sentences means MOST `filled-by-user` fields are gaps. Treat them as gaps unless they trace explicitly to seed text.
+- Do NOT draft the artifact first and infer the rest. **Gate first, draft after.**
+- Use host-native multi-question UI (e.g. `AskUserQuestion` with up to 4 questions in one prompt). One round of grouped questions beats four rounds of single-question chat.
+- Forbidden-to-infer lists never get inferred — gate or block.
+- When uncertain whether a value should be `[user]` or `[inferred]`: gate. Inference is silent drift; gating is one extra question.
+- When a seed names a domain (e.g. "build a chat app", "add caching") but does not specify the shape, the cross-field rules in the relevant schema (`idea.schema.md`, `seed.schema.md`) trigger. Honor them — they exist precisely because that domain has fields the user must own.
 
 ## Decision Procedure
 
-1. If `gaps` is empty, proceed and write the document.
-2. If host-native input is available, use it:
-   - `choice`: single-select or multi-select
-   - `short_text`: short freeform input
-   - `list`: compact newline or comma-separated input
-   - `free_text`: concise paragraph unless the user needs a worksheet
-   - `multi_field`: compact structured text or a few focused prompts
-3. If no structured input is available and there are at most two shallow gaps, ask concise chat questions and wait.
-4. Otherwise use the clarify-file fallback.
+1. If `gaps` is empty → proceed and write the document.
+2. Host-native input available → batch related questions (up to 4) in one prompt; pick `choice` / `short_text` / `list` / `free_text` / `multi_field` per gap kind.
+3. No structured input AND ≤ 2 shallow gaps → concise chat questions, one at a time.
+4. Long lists, nested matrices, many independent fields, or async filling → write `work/clarify-{stage}.md` from `templates/clarify.md`, stop, wait for "continue", parse, archive to `work/clarify-archive/`.
 
-Ask no more than three related questions in one interaction if the host supports grouped input; otherwise ask one question at a time. Do not create `work/clarify-*.md` just because a field is missing.
+Never instruct the user to type specific command phrases. Treat ambiguous words like "continue", "proceed", "next" as non-authorizing.
 
-## Clarify-File Fallback
+## Per-Stage Notes
 
-Use this path only for long lists, matrices, nested structures, many independent fields, user-requested async filling, or hosts without adequate interactive input.
-
-1. Write `work/clarify-{stage}.md` from `templates/clarify.md`.
-2. Stop. Tell the user to fill `<TBD: ...>` placeholders and say **continue**.
-3. Do not write the downstream document in the same turn.
-
-On **continue**:
-
-1. Re-read `work/clarify-{stage}.md`.
-2. Find remaining `<TBD:` placeholders.
-3. If any remain, list the fields and stop.
-4. If none remain:
-   - parse answers
-   - move the file to `work/clarify-archive/{stage}-{YYYY-MM-DD}-{HHMM}.md`
-   - write the downstream document with answers annotated `[user via clarify-{stage}]`
-
-For `stage = acceptance`, the downstream document is `work/acceptance.md`. The decision must always come from the user; there is no default. Prefer interactive choice input unless the user asks for an async decision file.
-
-## Source Annotations
-
-- Direct seed/input: `[user]`
-- Host-native input or chat clarification: `[user via gate]`
-- Clarify-file fallback: `[user via clarify-{stage}]`
+- `seed` / `idea`: seeds are usually sparse → default to eager gating with grouped host-native questions.
+- `prd`: No-New-Fields Rule — every PRD field must trace to idea.md or this run's gate.
+- `task-graph`: pre-flight only, no gate firing.
+- `acceptance`: the gate IS the user decision. `choice` kind, 4 options, never auto-decide, no default.
 
 ## Changelog
 
-- v2.1 (2026-05-02): Compacted runtime guidance; moved file template to `templates/clarify.md`.
+- v3.0 (2026-05-08): Consolidated `field-state-semantics.md` into this single runtime reference. Added Sparse-Input UX Rule.
+- v2.1 (2026-05-02): Compacted runtime guidance.
 - v2.0 (2026-04-29): Initial implementation.

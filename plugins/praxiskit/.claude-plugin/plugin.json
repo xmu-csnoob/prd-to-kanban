@@ -25,7 +25,7 @@
   "interface": {
     "displayName": "PraxisKit",
     "shortDescription": "Typed transform pipelines for agentic software work",
-    "longDescription": "PraxisKit v3 turns ideas into right-sized plans, coordinated agent execution, and final result reviews via typed A→B transforms (skills) and recipes (named chains). See recipes/README.md for how to compose them.",
+    "longDescription": "PraxisKit v3 turns ideas into right-sized plans, coordinated agent execution, and final result reviews via typed A→B transforms (skills) and recipes (named chains). See RECIPES.md for how to compose them.",
     "developerName": "xmu-csnoob",
     "category": "Productivity",
     "capabilities": [
@@ -35,11 +35,11 @@
     "websiteURL": "https://github.com/xmu-csnoob/praxiskit",
     "defaultPrompt": [
       "For toy projects or scripts, use the light recipe: invoke $seed-to-task-graph then $task-graph-to-batch.",
-      "For most features, use the standard recipe: invoke $seed-to-idea, then $idea-to-prd, then $prd-to-task-graph.",
-      "To resume a loop, use $next-iteration for one safe step or $auto-iterate for bounded repeated steps.",
+      "For most features, use the standard recipe: invoke $seed-to-idea, then $idea-to-prd, then $prd-to-task-graph. When the seed is sparse (1-2 sentences), gate eagerly via host-native multi-question UI — do not draft and infer.",
+      "To resume a loop, use $next-iteration. Pass budget=N or cycles=N for a bounded multi-step run.",
       "When PraxisKit offers a host-native choice prompt, use it to continue planning or stop instead of asking me to type the next slash command.",
       "Execute only when I explicitly authorize it: $batch-to-build refuses without authorization.",
-      "Close the loop with $build-to-review-packet then $review-to-acceptance."
+      "Close the loop with $review-and-accept (review packet + decision + archive)."
     ],
     "brandColor": "#0F766E"
   }

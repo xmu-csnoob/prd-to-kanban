@@ -22,8 +22,8 @@ It is planning-only. Do not implement tasks as part of the skill workflow.
 ### praxiskit (full pipeline)
 - Claude Code plugin: `plugins/praxiskit/.claude-plugin/plugin.json` + `plugins/praxiskit/skills/`
 - Codex plugin: `plugins/praxiskit/.codex-plugin/plugin.json` + `plugins/praxiskit/skills/`
-- Core transforms: `seed-to-idea`, `idea-to-prd`, `seed-to-task-graph`, `prd-to-task-graph`, `task-graph-to-batch`, `batch-to-build`, `build-to-review-packet`, `review-to-acceptance`
-- Driver skills: `next-iteration`, `auto-iterate`
+- Core transforms: `seed-to-idea`, `idea-to-prd`, `seed-to-task-graph`, `prd-to-task-graph`, `task-graph-to-batch`, `batch-to-build`, `review-and-accept`
+- Driver skill: `next-iteration` (single-step default; budget mode for bounded multi-step loops)
 
 ### Marketplace catalogs
 - Claude Code: `.claude-plugin/marketplace.json`

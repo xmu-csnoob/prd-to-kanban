@@ -16,9 +16,8 @@ Batch schema: bundled `schemas/execution-batch.schema.md`. Template: bundled `te
 ## Contract
 
 **Inputs:** `work/task-graph.md`, `work/SUBAGENT.md`, optional `work/praxiskit-context.md`
-**Output:** `work/execution-batch-{n}.md`
-**Preconditions:** task graph and SUBAGENT exist; at least one `[ ]` task has all dependencies `[x]`; baseline is checked
-**Postconditions:** batch lists selected task rows, acceptance criteria, write scopes, dependencies, baseline, validation commands, parallel groups, execution mode, and authorization state
+**Output:** `work/execution-batch-{n}.md` per `schemas/execution-batch.schema.md` — selected task rows, acceptance criteria, write scopes, dependencies, baseline, validation commands, parallel groups, execution mode, authorization state
+**Preconditions:** task graph + SUBAGENT exist; at least one `[ ]` task has all dependencies `[x]`; baseline checked
 **Stop boundary:** Does not execute, spawn agents, scaffold source, install dependencies, or modify project source.
 
 ## Bundled Resources
@@ -65,6 +64,8 @@ Use host-native decision/input whenever available.
 If no structured input is available, ask one direct chat question: "Execute Batch {n} now? yes/no". Treat only a clear yes for this exact batch as authorization.
 
 Do not instruct the user to type specific command phrases. Ambiguous words such as "advance", "continue", "next", or "proceed" do not authorize execution by themselves.
+
+**Authorization carry-through:** When the user chooses `execute_now` and the batch is written with `Mode: execute`, `batch-to-build` will skip its authorization prompt and go straight to upgrade checks. It only re-prompts the user if a check fails (fingerprint changed, tasks no longer unblocked, or baseline changed).
 
 ## Workflow
 

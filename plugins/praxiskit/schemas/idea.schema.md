@@ -7,7 +7,7 @@ output_file: work/idea.md
 
 # Idea Schema v2.0
 
-Defines required fields for `work/idea.md` and their state (see `references/field-state-semantics.md`).
+Defines required fields for `work/idea.md` and their state (see `references/clarification-gate.md`).
 
 ## Required Fields
 

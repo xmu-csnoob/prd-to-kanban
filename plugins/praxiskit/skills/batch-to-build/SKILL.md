@@ -15,11 +15,10 @@ Build log template: `templates/build-log.md`.
 
 ## Contract
 
-**Inputs:** `work/execution-batch-{n}.md` with `Mode: execute`, or dry-run plus fresh scoped authorization that passes upgrade checks
-**Output:** modified source, `work/build-log-{n}.md`, updated `work/task-graph.md`, updated `work/praxiskit-context.md`
-**Preconditions:** batch exists; baseline is `pass` unless this is a valid baseline-repair batch; authorization is scoped to this batch
-**Postconditions:** selected tasks are `[x]` after validation or `[!]` with reason; parallel groups use subagents; closeout records next entry point
-**Stop boundary:** Does not make acceptance decisions or extend scope. Hand off to `build-to-review-packet`.
+**Inputs:** `work/execution-batch-{n}.md` with `Mode: execute` (carried from `task-graph-to-batch`), OR dry-run plus fresh scoped authorization
+**Output:** modified source, `work/build-log-{n}.md`, updated task statuses in `work/task-graph.md`, updated `work/praxiskit-context.md`
+**Preconditions:** batch exists; baseline `pass` (unless valid baseline-repair batch); authorization scoped to this batch
+**Stop boundary:** Does not make acceptance decisions or extend scope. Hand off to `review-and-accept`.
 
 ## Must Rules
 
@@ -35,7 +34,8 @@ Build log template: `templates/build-log.md`.
 ## Authorization
 
 1. Read the batch authorization block.
-2. If dry-run and no current-turn authorization exists, ask once with host-native input if available:
+2. If `Mode: execute` is already set (carried from `task-graph-to-batch`), proceed directly to upgrade checks (step 5) — skip the user prompt. Re-prompt only if a check fails.
+   If dry-run and no current-turn authorization exists, ask once with host-native input if available:
    - question: "Execute this batch now?"
    - options: `execute_now`, `keep_dry_run`
    - include batch path, task IDs, parallel groups, subagent dispatch expectation, and validation commands
@@ -45,11 +45,11 @@ Build log template: `templates/build-log.md`.
    Execution requires a yes/no decision for this exact batch.
    ```
 4. Never instruct the user to type specific command phrases. Use a host-native decision prompt or one direct yes/no chat question.
-5. If upgrading dry-run, verify:
+5. Upgrade checks (run whenever batch.Mode = execute, whether carried or freshly authorized):
    - task graph fingerprint unchanged, or selected task rows still match exactly
    - selected tasks are still `[ ]` and unblocked
    - baseline rechecked and executable
-6. If checks pass, update authorization to `Mode: execute`, `Approved by user: yes`, `Authorization source: decision-ui | chat-confirmation`, current timestamp, and `Upgraded by batch-to-build: yes`.
+6. If checks pass, confirm authorization fields: `Mode: execute`, `Approved by user: yes`, `Authorization source: decision-ui | chat-confirmation`, current timestamp.
 7. If any parallel group has 2+ tasks and the batch does not say `subagent-driven`, treat that as a contract defect and update/refuse before execution.
 
 ## Context Budget
@@ -104,9 +104,9 @@ Before stopping:
   - question: "What should PraxisKit do next?"
   - options:
     - `create_next_batch`: run `task-graph-to-batch` now; this is planning only and will show a separate execution authorization prompt
-    - `review_current_build`: run `build-to-review-packet` now
+    - `review_current_build`: run `review-and-accept` now
     - `stop_here`: stop with the resume artifacts
 - If host-native input is unavailable, ask one direct chat question listing those three options.
 - Never interpret silence or a vague "continue" as execution authorization. Choosing `create_next_batch` authorizes only planning the next batch; `batch-to-build` still requires its own scoped execution authorization.
 
-Formal accept/revise/continue decisions belong to `build-to-review-packet` and `review-to-acceptance`.
+Formal accept/revise/continue decisions belong to `review-and-accept` Phase 2.
