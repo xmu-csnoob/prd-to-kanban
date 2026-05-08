@@ -1,4 +1,0 @@
-interface:
-  display_name: "Review to Acceptance"
-  short_description: "Collect the user's accept/revise/continue/not-yet decision on a review packet"
-  default_prompt: "Use $review-to-acceptance to record my decision on work/review.md."

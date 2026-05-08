@@ -1,7 +1,7 @@
 ---
 schema_name: review-packet
 schema_version: "3.0"
-used_by: build-to-review-packet, review-to-acceptance
+used_by: review-and-accept
 input_files: build, plus any of idea/PRD/task-graph
 output_file: work/review.md
 ---

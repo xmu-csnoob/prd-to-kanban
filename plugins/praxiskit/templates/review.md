@@ -34,4 +34,4 @@
 |------------|--------|-----------------|-----------------------|
 
 ## Decision Hand-Off
-Next: `review-to-acceptance` for the formal accept/revise/continue decision.
+Next: `review-and-accept` Phase 2 for the formal accept/revise/continue decision.

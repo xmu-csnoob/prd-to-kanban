@@ -1,294 +1,194 @@
+<div align="center">
+
 # PraxisKit
 
-**Turn rough intent into shipped code through typed A-to-B transforms and recipes.**
+**A typed transform pipeline for Claude Code and Codex.**
+Stop AI agents from inventing requirements. Every artifact field traces to a user source. Every code change waits for explicit authorization. Every iteration archives cleanly.
 
-PraxisKit is a Claude Code / Codex plugin for software-development workflows. v3 replaces large integrated skills with small typed transforms. Recipes are named chains of those transforms.
-
-```text
-seed -> idea -> PRD -> task graph -> execution batch -> build -> review packet -> acceptance
-```
-
-> Modes are recipes, not flags inside a skill. Light, standard, heavy, and from-prd flows reuse the same transform contracts.
-
-[![Claude Code Marketplace](https://img.shields.io/badge/Claude%20Code%20Marketplace-Published-green?style=flat-square&logo=anthropic)](https://github.com/xmu-csnoob/praxiskit/blob/main/.claude-plugin/marketplace.json)
+[![Claude Code Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-0F766E?style=flat-square&logo=anthropic)](https://github.com/xmu-csnoob/praxiskit/blob/main/.claude-plugin/marketplace.json)
+[![Codex Marketplace](https://img.shields.io/badge/Codex-Marketplace-1F2937?style=flat-square)](https://github.com/xmu-csnoob/praxiskit/blob/main/.agents/plugins/marketplace.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](#license)
 [![Stars](https://img.shields.io/github/stars/xmu-csnoob/praxiskit?style=flat-square&logo=github)](https://github.com/xmu-csnoob/praxiskit/stargazers)
 
+```text
+seed → idea → PRD → task graph → batch → build → review → acceptance
+                                   │
+                                   └─ explicit user authorization checkpoint
+```
+
+</div>
+
+---
+
+## Why PraxisKit
+
+LLM coding agents fail in predictable ways:
+
+- They draft a "plan" that *looks* complete but invents requirements.
+- They infer API params, metadata fields, performance targets the user never authorized.
+- They claim "tests pass" without showing evidence.
+- A 50-line task balloons into 2,000 lines of slop with no rollback.
+
+PraxisKit replaces "one big prompt" with a chain of small typed transforms. Each step has a schema. Each artifact field carries an annotation: `[user]`, `[user via gate]`, or `[inferred from {field}]`. **No drift, no hallucinated requirements, no mystery commits.**
+
+| Free-form prompting | PraxisKit |
+|---|---|
+| One mega-prompt; agent decides what's reasonable | Each step has a typed schema; missing fields go to a clarification gate |
+| Inferred metadata, fabricated specs | Every field annotated with its source — no mystery values |
+| "Looks good, ship it" | Pre-flight refuses if blocking questions or acceptance criteria are missing |
+| Code merges without explicit approval | `batch-to-build` refuses unless the user authorized **this exact batch** |
+| Vague seeds become silent drift | **Sparse-input UX rule**: gate eagerly, never draft-then-infer |
+| One huge run, no recovery | Recursive iterations with archive/reset; each loop starts from a clean `work/` |
+
+## The Sparse-Input UX Rule (the killer feature)
+
+Most seeds are 1-2 sentences. That's exactly when drift hurts most. PraxisKit's clarification gate fires **eagerly** on sparse input:
+
+```text
+seed: "build a chat app with caching"
+                │
+                ▼
+  cross-field rules trigger:
+    cache_metadata_fields  (forbidden-to-infer)
+    consistency_model      (forbidden-to-infer)
+                │
+                ▼
+  AskUserQuestion (host-native, up to 4 grouped questions):
+    1. Which cache entries need metadata? Which fields?
+    2. Consistency model? (eventual / linearizable / per-session)
+    3. Auth required for cache reads?
+    4. Eviction policy?
+                │
+                ▼
+  draft work/idea.md only after gaps resolved
+  every field annotated [user] or [user via gate]
+```
+
+`forbidden-to-infer` lists (API params, metadata fields, performance targets) **never** get inferred — gate or block. **Inference is silent drift; gating is one extra question.**
+
+## 30-Second Start
+
+```bash
+# Claude Code
+claude plugin marketplace add xmu-csnoob/praxiskit
+claude plugin install praxiskit@xmu-csnoob-tools
+
+# Codex
+codex plugin marketplace add xmu-csnoob/praxiskit
+# then /plugins → install praxiskit
+```
+
+From the project root, run a recipe end-to-end:
+
+```text
+# Standard recipe — most feature work
+/praxiskit:seed-to-idea
+/praxiskit:idea-to-prd
+/praxiskit:prd-to-task-graph
+/praxiskit:task-graph-to-batch        # dry-run batch
+yes, execute this exact batch         # explicit authorization
+/praxiskit:batch-to-build             # subagent-driven execution
+/praxiskit:review-and-accept          # review + decision + archive
+```
+
+Or let the driver pick the next safe step:
+
+```text
+/praxiskit:next-iteration                # one transform step
+/praxiskit:next-iteration budget=20      # bounded multi-step loop
+```
+
 ## Recipes
 
-| Recipe | Chain | Use when... |
+A recipe is a named chain of transforms. Pick the smallest one that preserves the context you need.
+
+| Recipe | When | Chain |
 |---|---|---|
-| Light | `seed-to-task-graph -> task-graph-to-batch -> batch-to-build -> build-to-review-packet -> review-to-acceptance` | Toy projects, scripts, prototypes, and direct acceptance criteria |
-| Standard | `seed-to-idea -> idea-to-prd -> prd-to-task-graph -> task-graph-to-batch -> batch-to-build -> build-to-review-packet -> review-to-acceptance` | Most feature work |
-| Heavy | Standard chain with repeated batches and parallel groups | Large projects with disjoint write scopes |
-| From PRD | `prd-to-task-graph -> task-graph-to-batch -> batch-to-build -> build-to-review-packet -> review-to-acceptance` | You already have a valid PRD |
+| **Light** | Scripts, prototypes, refactors with direct done criteria | `seed-to-task-graph → batch → build → accept` |
+| **Standard** | Most feature work; needs intent, scope, non-goals, traceability | `seed-to-idea → idea-to-prd → prd-to-task-graph → batch → build → accept` |
+| **Heavy** | Multiple disjoint write scopes; wall-clock matters | Standard + parallel groups inside batches |
+| **From PRD** | A valid PRD already exists | `prd-to-task-graph → batch → build → accept` |
 
-Read `plugins/praxiskit/recipes/README.md` and the specific recipe file before starting.
+> **Mode = recipe, not a skill flag.** No transform branches on `light`/`standard`/`heavy`. Different needs get different chains.
 
-## Recursive Iteration
-
-PraxisKit treats `work/` as the active working set for the current loop. When `review-to-acceptance` records a decision other than `not_accept_yet`, it archives the completed loop under `work/archive/iterations/{timestamp}-{decision}/`, resets active `work/` to the minimal carry-forward files, and rewrites `work/praxiskit-context.md` with the next entry point.
-
-Use the driver skills when you want the loop advanced for you:
-
-| Driver | What it does | Stops at |
-|---|---|---|
-| `/praxiskit:next-iteration` | Reads `work/praxiskit-context.md`, chooses the next transform, and runs exactly one step | That transform's normal boundary |
-| `/praxiskit:auto-iterate` | Repeats `next-iteration` across multiple waves within a budget | Execution authorization, acceptance input, blocker, failed validation, completion, or budget |
-
-The drivers are orchestration only. They do not auto-authorize source changes, auto-accept reviews, or bypass subagent rules.
+Full spec: [`plugins/praxiskit/RECIPES.md`](plugins/praxiskit/RECIPES.md).
 
 ## Transforms
 
-| Transform | Input | Output | Stops before |
+Each transform is a Claude Code / Codex skill with a typed `## Contract` (Inputs · Output · Preconditions · Stop boundary). Schemas live in [`plugins/praxiskit/schemas/`](plugins/praxiskit/schemas).
+
+| Skill | Input | Output | Stops before |
 |---|---|---|---|
 | `/praxiskit:seed-to-idea` | seed | `work/idea.md` | PRD |
 | `/praxiskit:idea-to-prd` | `work/idea.md` | `work/PRD.md` | task graph |
 | `/praxiskit:seed-to-task-graph` | seed | `work/task-graph.md` + `work/SUBAGENT.md` | execution |
 | `/praxiskit:prd-to-task-graph` | `work/PRD.md` | `work/task-graph.md` + `work/SUBAGENT.md` | execution |
-| `/praxiskit:task-graph-to-batch` | `work/task-graph.md` | `work/execution-batch-{n}.md` | source changes |
-| `/praxiskit:batch-to-build` | authorized batch | code + `work/build-log-{n}.md` | acceptance decision |
-| `/praxiskit:build-to-review-packet` | build + task graph/PRD | `work/review.md` | acceptance decision |
-| `/praxiskit:review-to-acceptance` | `work/review.md` | `work/acceptance.md` | follow-up execution |
+| `/praxiskit:task-graph-to-batch` | task graph | `work/execution-batch-{n}.md` (dry-run) | source changes |
+| `/praxiskit:batch-to-build` | authorized batch | code + `work/build-log-{n}.md` | acceptance |
+| `/praxiskit:review-and-accept` | build evidence | `work/review.md` + `work/acceptance.md` + archive | next loop |
+| `/praxiskit:next-iteration` | `work/praxiskit-context.md` | one transform step (or bounded loop) | per transform's boundary |
 
-## Drivers
+## Authorization Checkpoints
 
-| Driver | Input | Output |
-|---|---|---|
-| `/praxiskit:next-iteration` | `work/praxiskit-context.md` or active `work/` artifacts | one selected transform step |
-| `/praxiskit:auto-iterate` | current PraxisKit state plus optional budget | repeated safe steps until checkpoint |
-
-## Quick Start
-
-Use PraxisKit from the root of the project you want to change. PraxisKit writes planning artifacts under `work/` in that project, then stops at explicit checkpoints before touching source code.
-
-```bash
-# 1. Add marketplace
-claude plugin marketplace add xmu-csnoob/praxiskit
-
-# 2. Install the plugin
-claude plugin install praxiskit@xmu-csnoob-tools
-
-# 3. Pick a recipe and invoke transforms in order
-/praxiskit:seed-to-task-graph   # light recipe start
-/praxiskit:task-graph-to-batch  # produces a dry-run batch by default
+```text
+[planning]            [batch-to-build]            [review-and-accept]
+   │                       │                            │
+   write artifacts         requires explicit            requires user decision
+   under work/             batch authorization          (4 options, no
+   no source changes       for THIS exact batch         auto-decide, no default)
 ```
 
-To execute a dry-run batch, approve the exact batch through the host decision UI or answer a direct yes/no question for that batch. After a loop closes, use `/praxiskit:next-iteration` to continue from `work/praxiskit-context.md`.
+`batch-to-build` refuses without `Mode: execute`. Ambiguous words like "continue", "next", "advance" are **not** authorization. The user explicitly approves through host-native decision UI or one direct yes/no answer for the exact batch.
 
-For Codex: `codex plugin marketplace add xmu-csnoob/praxiskit`, then open `/plugins` and install `praxiskit`.
+If a dry-run batch is later authorized, `batch-to-build` re-validates that the task graph fingerprint, dependencies, write scopes, statuses, and baseline are still fresh. Stale batches refuse to upgrade.
 
-## Visual Console
+## Recursive Iterations
 
-PraxisKit ships with an interactive visual workbench for browsing iterations, task graphs, and review packets.
+After `review-and-accept` records a decision other than `not_accept_yet`:
+
+1. **Archive** — completed loop moves to `work/archive/iterations/{timestamp}-{decision}/` with a manifest.
+2. **Reset** — active `work/` is recreated with the minimal carry-forward set (e.g. task-graph + SUBAGENT for `continue_next_wave`; follow-ups only for `revise`).
+3. **Resume** — `work/praxiskit-context.md` records the next entry point.
+
+```text
+loop 1: idea → PRD → graph → batch → build → accept_wave        ┐
+loop 2: graph (carried) → batch → build → continue_next_wave    ├─ work/archive/iterations/
+loop 3: graph (carried) → batch → build → revise + follow-ups   ┘
+loop 4: new graph from follow-ups → ...
+```
+
+Active context stays small. History stays auditable. `next-iteration` always knows what to read next from `praxiskit-context.md`.
+
+## Design Principles
+
+- **Typed transforms over free-form prompts.** Each step has a schema; the agent refuses instead of inventing.
+- **Sources are explicit.** Every artifact field carries an annotation. No mystery values.
+- **Mode = recipe, not flag.** No transform branches on `light`/`standard`/`heavy`. Different needs get different chains.
+- **Planning vs execution boundary is hard.** Planning skills never modify project source.
+- **User checkpoints, not permission slips.** Host-native choice UI when available; never ask the user to type incantation phrases.
+- **Sparse input → eager gate.** Most seeds are vague — that's expected. The gate exists precisely for that case.
+
+## Visual Console (optional)
 
 ```bash
 git submodule update --init console
 cd console && npm install && npm run dev
 ```
 
-Then open `http://localhost:5173` and select your project's `work/` directory. The console renders task DAGs with React Flow, tracks wave progress, and provides archive access for historical iterations.
+Open `http://localhost:5173` → select your project's `work/` directory. The console renders task DAGs with React Flow, tracks wave progress, and provides archive access for historical iterations.
 
-> The console is a Git submodule at `console/` → `https://github.com/xmu-csnoob/praxiskit-console`.
-
-## Usage Guide
-
-### 1. Pick the Right Recipe
-
-Start by choosing the smallest recipe that still preserves the context you need.
-
-| If you have... | Use | Start with |
-|---|---|---|
-| A short prompt with clear done criteria | Light | `/praxiskit:seed-to-task-graph` |
-| A rough idea that needs shaping | Standard | `/praxiskit:seed-to-idea` |
-| A complete PRD already written | From PRD | `/praxiskit:prd-to-task-graph` |
-| A large project that should run in waves | Heavy | `/praxiskit:seed-to-idea` |
-
-PraxisKit does not hide mode switches inside a skill. A recipe is just an ordered chain of small transforms, so you can see which artifact is produced at every step.
-
-### 2. Light Recipe: Seed to Dry-Run Batch
-
-Use this for scripts, prototypes, focused bug fixes, and small local tools.
-
-Example request:
-
-```text
-Use PraxisKit light recipe. Build a local CLI that turns unchecked Markdown checklist items into GitHub issue draft Markdown. It should ignore checked items, not call the GitHub API, and include a minimal parser/output test.
-```
-
-Then invoke:
-
-```text
-/praxiskit:seed-to-task-graph
-/praxiskit:task-graph-to-batch
-```
-
-The first transform creates:
-
-- `work/task-graph.md`: tasks, acceptance criteria, dependencies, write scopes
-- `work/SUBAGENT.md`: execution context and worker write-scope boundaries
-
-The second transform creates:
-
-- `work/execution-batch-{n}.md`: the next unblocked set of tasks
-- `Mode: dry-run` by default
-
-At this point no source files should be modified. Review the batch. If it looks right, explicitly authorize execution:
-
-```text
-yes, execute this exact batch
-```
-
-Then invoke:
-
-```text
-/praxiskit:batch-to-build
-```
-
-### 3. Standard Recipe: Idea to Acceptance
-
-Use this for most feature work where intent, scope, non-goals, and acceptance criteria matter.
-
-```text
-/praxiskit:seed-to-idea
-/praxiskit:idea-to-prd
-/praxiskit:prd-to-task-graph
-/praxiskit:task-graph-to-batch
-```
-
-Review `work/task-graph.md` and `work/execution-batch-{n}.md`. To run the batch, approve the exact batch through the host decision UI or answer the direct yes/no execution question.
-
-```text
-yes, execute this exact batch
-```
-
-Then continue:
-
-```text
-/praxiskit:batch-to-build
-/praxiskit:build-to-review-packet
-/praxiskit:review-to-acceptance
-```
-
-`review-to-acceptance` records your decision. It does not infer accept/revise/continue by itself.
-
-After acceptance, the loop is archived and active `work/` is reset. Run `/praxiskit:next-iteration` to continue one more wave, or `/praxiskit:auto-iterate` to keep advancing until the next checkpoint.
-
-### 4. From-PRD Recipe
-
-If `work/PRD.md` already exists and is implementation-ready, skip seed and idea shaping:
-
-```text
-/praxiskit:prd-to-task-graph
-/praxiskit:task-graph-to-batch
-```
-
-Then review the dry-run batch and authorize execution only when ready.
-
-### 5. Heavy Recipe
-
-Heavy uses the same transforms as standard, but repeats batch/build/review cycles. Use it when the task graph has clear waves or disjoint write scopes:
-
-```text
-/praxiskit:task-graph-to-batch
-yes, execute this exact batch
-/praxiskit:batch-to-build
-/praxiskit:build-to-review-packet
-```
-
-After review, run `task-graph-to-batch` again for the next unblocked wave. Keep repeating until `review-to-acceptance` closes the work.
-
-You can replace the manual repeat with:
-
-```text
-/praxiskit:next-iteration   # one safe step
-/praxiskit:auto-iterate     # bounded multi-step loop
-```
-
-## Authorization
-
-Planning transforms may write artifacts under `work/`, but they do not modify project source.
-
-`batch-to-build` is the execution boundary. It refuses unless:
-
-- the batch artifact says `authorization: execute`
-- the user has explicitly confirmed execution for that exact batch in the current session
-
-Use host-native decision/input when available. Otherwise, answer one direct yes/no question for the exact batch. Words like `continue`, `next`, `advance`, or `proceed` are not execution authorization by themselves.
-
-If a dry-run batch is later authorized, `batch-to-build` first checks that the batch is still fresh: selected tasks, dependencies, write scopes, status, and baseline must still match.
-
-`review-to-acceptance` also requires user input. It never auto-decides.
-
-## Baseline Behavior
-
-`task-graph-to-batch` records the narrowest practical build/test command before producing a batch.
-
-| Baseline status | Meaning | Execution behavior |
-|---|---|---|
-| `pass` | Existing project baseline is healthy | Normal execution may proceed after authorization |
-| `fail` | Existing project baseline is broken | Only a baseline-repair batch may execute |
-| `unavailable` | No baseline command was found | Dry-run only; add/select a baseline command before execution |
-
-This keeps PraxisKit from mixing pre-existing failures with new implementation work.
-
-## What Gets Produced
-
-### `work/task-graph.md`
-
-A dependency-aware graph of tasks with acceptance criteria, write scopes, dependency edges, waves, and parallelism windows.
-
-```markdown
-| ID | Title | Status | Acceptance Criteria | Write Scope | Dependencies |
-|----|-------|--------|---------------------|-------------|--------------|
-| T0.1 | ... | [ ] | Given..., when..., then... | `path/` | - |
-```
-
-### `work/execution-batch-{n}.md`
-
-A selected set of unblocked tasks. It includes baseline evidence, parallel groups, sequential tasks, and authorization state.
-
-### `work/SUBAGENT.md`
-
-Shared execution context for agents: project summary, stack, frozen contracts, write scopes, and reporting convention.
-
-### `work/review.md` and `work/acceptance.md`
-
-`build-to-review-packet` writes inspectable evidence. `review-to-acceptance` records the user's formal decision, then archives the loop and resets active `work/` unless the decision is `not_accept_yet`.
-
-### `work/archive/iterations/` and `work/praxiskit-context.md`
-
-Completed loops are durable archives. Active `work/` stays small, and `work/praxiskit-context.md` tells `next-iteration` or `auto-iterate` which files to read next.
-
-## Install
-
-### Claude Code plugin
-
-```bash
-claude plugin marketplace add xmu-csnoob/praxiskit
-claude plugin install praxiskit@xmu-csnoob-tools
-```
-
-### Claude Code local dev
-
-```bash
-claude --plugin-dir plugins/praxiskit
-```
-
-### Codex plugin
-
-```bash
-codex plugin marketplace add xmu-csnoob/praxiskit
-# then open /plugins -> xmu-csnoob Tools -> install praxiskit
-```
+> Submodule: [`praxiskit-console`](https://github.com/xmu-csnoob/praxiskit-console).
 
 ## Repository Layout
 
 ```text
 plugins/praxiskit/
-  recipes/              # named transform chains
-  references/           # clarification gate and field-state semantics
-  schemas/              # typed artifact schemas
+  RECIPES.md                  # named transform chains
+  references/                 # clarification gate (with sparse-input UX rules),
+                              # shared boundaries, decompose workflow
+  schemas/                    # typed artifact schemas (idea, PRD, task graph,
+                              # execution batch, review packet, acceptance, seed)
+  templates/                  # artifact skeletons
   skills/
     seed-to-idea/
     idea-to-prd/
@@ -296,12 +196,42 @@ plugins/praxiskit/
     prd-to-task-graph/
     task-graph-to-batch/
     batch-to-build/
-    build-to-review-packet/
-    review-to-acceptance/
+    review-and-accept/
     next-iteration/
-    auto-iterate/
+```
+
+There is also a standalone [`prd-to-kanban`](plugins/prd-to-kanban) plugin for users who only need PRD-to-Kanban planning without the full PraxisKit pipeline.
+
+## Install
+
+### Claude Code
+
+```bash
+claude plugin marketplace add xmu-csnoob/praxiskit
+claude plugin install praxiskit@xmu-csnoob-tools
+```
+
+Local dev:
+
+```bash
+claude --plugin-dir plugins/praxiskit
+```
+
+### Codex
+
+```bash
+codex plugin marketplace add xmu-csnoob/praxiskit
+# then /plugins → xmu-csnoob Tools → install praxiskit
 ```
 
 ## License
 
-MIT
+MIT — free for personal and commercial use.
+
+---
+
+<div align="center">
+
+**If PraxisKit kept your AI agent from drifting, leave a ⭐.**
+
+</div>

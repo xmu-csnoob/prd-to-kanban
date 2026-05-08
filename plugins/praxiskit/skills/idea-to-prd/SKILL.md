@@ -1,11 +1,11 @@
 ---
 name: idea-to-prd
-description: "Create work/PRD.md from work/idea.md while preserving user-source traceability."
+description: "Create work/PRD.md from work/idea.md. Enforces No-New-Fields Rule; gates eagerly when idea.md is sparse."
 ---
 
 # Idea to PRD
 
-Convert an idea brief into a PRD that is specific enough for planning, but not yet a task board.
+Convert an idea brief into a PRD that is specific enough for planning, but not yet a task board. **If idea.md is sparse, drift risk transfers to the PRD — gate every PRD field that lacks a `[user]` source in idea.md.**
 
 ```text
 work/idea.md -> idea-to-prd -> work/PRD.md -> prd-to-task-graph
@@ -13,60 +13,36 @@ work/idea.md -> idea-to-prd -> work/PRD.md -> prd-to-task-graph
 
 ## Contract
 
-**Inputs:** `idea` (`work/idea.md`)
-**Output:** `prd` (`work/PRD.md`)
-**Schema:** `schemas/prd.schema.md` (v2.0)
-**Preconditions:**
-- `work/idea.md` exists and follows `schemas/idea.schema.md`
-- Every field in idea.md has a source annotation
-**Postconditions:**
-- Every PRD field has a `[user]`, `[user via *]`, or `[inferred from {field}]` annotation
-- No-New-Fields Rule holds: no PRD field exists without a traceable source in idea.md or this run's gate
-- All idea.md Open Questions are processed (promoted, carried, or removed)
-- Every FR has acceptance criteria in Given/When/Then form
-**Clarification gate:** fires per `references/clarification-gate.md` for any PRD field that has no `[user]` or `[user via *]` source in idea.md and is not `inferable`.
-**Side effects:**
-- Writes `work/PRD.md`
-- May write `work/clarify-prd.md` only as an async/bulk fallback (archived after gate completes)
-- Updates `work/praxiskit-context.md`
+**Inputs:** `work/idea.md` (must follow `schemas/idea.schema.md`, every field annotated)
+**Output:** `work/PRD.md` per `schemas/prd.schema.md` (v2.0); fires `references/clarification-gate.md` for any PRD field that lacks a `[user]` or `[user via *]` source in idea.md and is not `inferable`
+**Preconditions:** `work/idea.md` exists; every idea.md field has a source annotation
 **Stop boundary:** Does NOT decompose into tasks. Hands off to `prd-to-task-graph`.
 
 ## Workflow
 
 1. **Load source context.** Read `work/idea.md`. If `work/praxiskit-context.md` exists, read it first.
-2. **Load schema.** Read `references/field-state-semantics.md` and `schemas/prd.schema.md`.
+2. **Load gate reference + schema.** Read `references/clarification-gate.md` and `schemas/prd.schema.md`.
 3. **Map idea.md to PRD fields.**
-   - For each PRD field, find the matching idea.md field with a `[user]` or `[user via *]` annotation.
-   - If a PRD field has no `[user]` source in idea.md -> add to `gaps`.
-   - `inferable` PRD fields may be derived from `[user]` idea.md fields -- mark `[inferred from {field}]`.
-4. **Process idea.md Open Questions.** For each Open Question in idea.md:
-   - Check if the question's subject appears as a `[user]` or `[user via *]` annotated field elsewhere in idea.md. If yes → the question is answered; promote that field to a confirmed PRD field.
-   - If no matching `[user]` field exists → the question is still open; carry it to PRD `## Open Questions` with the same `blocking`/`non-blocking` type.
-5. **Apply No-New-Fields Rule.** Any field that would appear in the PRD but has no `[user]` or `[user via *]` source in idea.md and is not `inferable` -> add to `gaps`.
-6. **Call clarification-gate** (see `references/clarification-gate.md`) for all gaps.
-7. **Write `work/PRD.md`** only after all gaps are resolved. Annotate every field with its source.
+   - Each PRD field → matching idea.md field with `[user]` or `[user via *]`.
+   - No `[user]` source in idea.md → add to `gaps`.
+   - `inferable` PRD fields may be derived from `[user]` idea.md fields → mark `[inferred from {field}]`.
+4. **Process idea.md Open Questions.** For each:
+   - Subject already has a `[user]` annotated field elsewhere in idea.md → answered; promote to confirmed PRD field.
+   - No matching `[user]` field → carry to PRD `## Open Questions` with the same `blocking` / `non-blocking` type.
+5. **Apply No-New-Fields Rule** (see below). Any field that would appear in PRD with no `[user]` source AND not `inferable` → add to `gaps`.
+6. **Call clarification-gate** for all gaps. Prefer host-native multi-question UI (up to 4 grouped questions per round) — especially when many fields are gaps at once.
+7. **Write `work/PRD.md`** only after all gaps are resolved. Annotate every field.
 8. **Update `work/praxiskit-context.md`**.
 9. **Stop at product requirements.** Do not decompose into tasks.
 
 ## No-New-Fields Rule
 
-**This is the core constraint of idea-to-prd v2.**
+**Core constraint of idea-to-prd.** No PRD value may appear unless it is:
+- A `[user]` or `[user via *]` annotated field in `work/idea.md`,
+- An answer collected through the clarification gate in this run, OR
+- An `inferable` derivation from the above (marked `[inferred from {field}]`).
 
-The agent MUST NOT write any value in the PRD that cannot be attributed to one of:
-- A `[user]` or `[user via *]` annotated field in `work/idea.md`
-- An answer collected through the clarification gate in this run
-- An `inferable` derivation from the above (marked `[inferred from {field}]`)
-
-**Violation example (v1 behavior, now prohibited):**
-> idea.md has: `KV-cache support [user]`
-> idea-to-prd writes: `FR4: KV-cache entries must carry model_id, session_id, layer, token_range, tensor_shape, dtype, lifecycle_hints`
->
-> This violates the rule. The metadata field list is `forbidden-to-infer`. It must go to the gate.
-
-**Compliant behavior:**
-> Gate asks: "What metadata fields does a KV-cache entry need?"
-> User answers: "layer, token_range, dtype"
-> PRD writes: `FR4: KV-cache entries carry: layer, token_range, dtype [user via gate]`
+`forbidden-to-infer` lists (API params, metadata field names, performance targets, consistency guarantees) MUST NOT be inferred — they become blocking Open Questions if the user cannot be reached.
 
 ## Output
 

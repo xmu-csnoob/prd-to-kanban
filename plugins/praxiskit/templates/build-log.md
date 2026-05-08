@@ -25,5 +25,5 @@
 ## Closeout
 - Leftovers: next_batch / blocked / deferred / cleanup
 - Archived transient notes: {paths or none}
-- Next entry point: task-graph-to-batch / build-to-review-packet / stop blocked
+- Next entry point: task-graph-to-batch / review-and-accept / stop blocked
 - Fresh-session resume: {minimal artifact list}

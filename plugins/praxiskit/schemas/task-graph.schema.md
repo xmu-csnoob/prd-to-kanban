@@ -40,7 +40,7 @@ Each task row has these required fields:
 |---|---|---|
 | task_id | inferable | Sequential `T{wave}.{n}` format |
 | title | inferable | Derive from FR, milestone, or seed intent |
-| acceptance_criteria | filled-by-user | For PRD-sourced: copy verbatim from FR row. For seed-sourced: copy, quote, or split the seed/gate answer across subtasks without adding new acceptance meaning. |
+| acceptance_criteria | filled-by-user | For PRD-sourced: copy verbatim from FR row. For seed-sourced: copy, quote, or split the seed/gate answer across subtasks without adding new acceptance meaning |
 | write_scope | inferable | Files/dirs this task will modify |
 | dependencies | inferable | Other task IDs this task depends on |
 | status | inferable | `[ ]` pending, `[/]` in progress, `[x]` done, `[!]` blocked |
