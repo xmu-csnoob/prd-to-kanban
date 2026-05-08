@@ -10,7 +10,7 @@ For when a PRD already exists (written by humans, generated elsewhere, or carrie
 
 ## Chain
 
-1. *(prerequisite: `work/PRD.md` exists and follows `schemas/prd.schema.md`)*
+1. *(prerequisite: `work/PRD.md` exists and follows bundled `schemas/prd.schema.md`; if root `PRD.md` is the only obvious candidate, `prd-to-task-graph` may adopt it into `work/PRD.md`)*
 2. **`prd-to-task-graph`** — produces `work/task-graph.md` + `work/SUBAGENT.md`
 3. **`task-graph-to-batch`** — produces `work/execution-batch-{n}.md`
 4. **`batch-to-build`** — executes the authorized batch
@@ -37,6 +37,7 @@ Do NOT use `from-prd` when:
 - Pre-`batch-to-build`: planning only.
 - `batch-to-build`: REQUIRES explicit user authorization. It may upgrade a current dry-run batch only after validating that the task graph and baseline are still current.
 - `review-to-acceptance`: REQUIRES user input.
+- Between batches, prefer discuss-style host choices such as `create_next_batch`, `review_current_build`, or `stop_here` so the user does not need to manually invoke `/task-graph-to-batch`.
 
 ## Notes
 

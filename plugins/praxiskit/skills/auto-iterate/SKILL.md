@@ -23,6 +23,7 @@ work/praxiskit-context.md -> auto-iterate -> repeated next-iteration steps -> ch
 
 - Do not auto-accept review results.
 - Do not auto-authorize dry-run batches.
+- Use host-native choice input for every user-owned decision when available. This keeps the loop in discuss mode: the user chooses the next safe action instead of typing the next slash command.
 - Do not replace `batch-to-build` subagent rules; parallel windows remain subagent-driven.
 - Do not load old archives unless the current context or active carry-forward files are insufficient.
 - Do not start a new product seed after a completed `accept_wave` unless the user explicitly asks.

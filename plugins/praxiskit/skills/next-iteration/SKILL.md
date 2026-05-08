@@ -19,6 +19,10 @@ work/praxiskit-context.md + active work/ artifacts -> next-iteration -> one next
 **Postconditions:** at most one transform is run; execution and acceptance gates remain enforced
 **Stop boundary:** Does not bypass any transform's stop boundary. Source changes can happen only through `batch-to-build` after its authorization checks pass.
 
+## Interaction Mode
+
+Prefer host-native choice input for continuation decisions. The user should not need to remember the next slash command when PraxisKit already knows the safe next step. Choice prompts may authorize planning steps such as `task-graph-to-batch`, but they never authorize code execution or acceptance decisions unless the selected transform explicitly asks for that scoped decision.
+
 ## Workflow
 
 1. Read `work/praxiskit-context.md` first. If it names a next skill and exact files to read, trust that unless the files are missing.
@@ -32,7 +36,7 @@ work/praxiskit-context.md + active work/ artifacts -> next-iteration -> one next
    - seed only -> ask which recipe entry to use (`seed-to-task-graph` for light, `seed-to-idea` for standard/heavy)
 3. If the context points at an archive, read only that archive's `manifest.md` unless a carried-forward file is missing.
 4. Route to the selected transform skill and follow that skill's `SKILL.md` exactly.
-5. Stop after that one transform reaches its boundary. Report:
+5. Stop after that one transform reaches its boundary unless that transform offers a host-native continuation choice and the user selects it. Report:
    - selected next skill
    - artifacts read
    - artifact written or blocker
